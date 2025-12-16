@@ -1,0 +1,158 @@
+# Elysia Clean Architecture Pattern
+
+## Folder Structure
+
+Always follow this modular, feature-based architecture:
+
+```
+src/
+├─ modules/                          ← one folder per business domain
+│  ├─ auth/
+│  │  ├─ presentation/
+│  │  │  ├─ auth.controller.ts     ← Elysia instance with routes
+│  │  │  ├─ auth.dto.ts            ← TypeBox schemas
+│  │  │  └─ auth.macros.ts         ← shared macros, hooks
+│  │  ├─ application/
+│  │  │  ├─ register.use-case.ts
+│  │  │  └─ login.use-case.ts
+│  │  ├─ domain/
+│  │  │  ├─ user.entity.ts
+│  │  │  └─ auth.iface.ts          ← repository interfaces
+│  │  ├─ infrastructure/
+│  │  │  ├─ user.repository.ts     ← Drizzle / Prisma impl
+│  │  │  └─ auth.module.ts         ← dependency wiring
+│  │  └─ index.ts                  ← public plugin export
+│  │
+│  └─ health/
+│     ├─ presentation/
+│     │  └─ health.controller.ts
+│     └─ index.ts
+├─ shared/
+│  ├─ presentation/
+│  │  ├─ base.dto.ts
+│  │  ├─ error-handler.ts
+│  │  └─ correlation.plugin.ts
+│  └─ config.ts
+├─ app.ts                            ← glue file (≈ 10 lines)
+└─ index.ts                          ← HTTP entry (Bun.serve)
+```
+
+## Architecture Rules
+
+### 1. Module Structure
+
+- Each business domain gets its own folder under `src/modules/`
+- Each module has 4 layers: `presentation/`, `application/`, `domain/`, `infrastructure/`
+- Each module exports a single plugin via `index.ts`
+
+### 2. Infrastructure Module Pattern
+
+```typescript
+// modules/{feature}/infrastructure/{feature}.module.ts
+import { Elysia } from 'elysia';
+import { db } from '@/shared/infrastructure/db';   // singleton
+import { Repository } from './repository';
+import { UseCase } from '../application/use-case';
+
+export const {feature}Module = new Elysia({ name: '{feature}Module' })
+  .decorate('repo', new Repository(db))      // singleton
+  .decorate('useCase', new UseCase());
+```
+
+### 3. Controller Pattern
+
+```typescript
+// modules/{feature}/presentation/{feature}.controller.ts
+import { Elysia } from 'elysia';
+import { {feature}Module } from '../infrastructure/{feature}.module';
+import { {Feature}Dto } from './{feature}.dto';
+
+export const {feature}Controller = new Elysia({ prefix: '/{feature}' })
+  .use({feature}Module)          // injects repos & use-cases
+  .post('/endpoint', async ({ body, useCase, repo }) => {
+      const result = await useCase.execute(body, repo);
+      return result;
+    }, { body: {Feature}Dto.schema });
+```
+
+### 4. Public Export Pattern
+
+```typescript
+// modules/{feature}/index.ts
+export { {feature}Controller } from './presentation/{feature}.controller';
+```
+
+### 5. App Assembly Pattern
+
+```typescript
+// src/app.ts
+import { Elysia } from "elysia";
+import { authController } from "@/modules/auth";
+import { healthController } from "@/modules/health";
+import { errorPlugin } from "@/shared/presentation/error-handler";
+
+export const app = new Elysia()
+  .use(errorPlugin)
+  .use(authController)
+  .use(healthController);
+```
+
+### 6. Entry Point Pattern
+
+```typescript
+// src/index.ts
+import { serve } from "bun";
+import { app } from "./app";
+
+serve(app);
+```
+
+## Key Principles
+
+1. **Singleton Pattern**: Elysia caches plugins by `name`, so repos and use-cases are created once per process
+2. **Type-Safety**: Use `decorate` / `derive` to propagate types automatically
+3. **Test Isolation**: In unit tests, use `.use(mockModule)` instead of real one
+4. **Layer Boundaries**:
+   - `presentation/` → `application/` → `domain/` → `infrastructure/`
+   - Never import from lower layers to higher layers
+   - Use interfaces in `domain/` for repository contracts
+
+## Dependencies
+
+- **Presentation Layer**: Depends on Application layer, defines DTOs and routes
+- **Application Layer**: Depends on Domain layer, contains use cases
+- **Domain Layer**: Pure business logic, defines interfaces
+- **Infrastructure Layer**: Implements domain interfaces, depends on external services (DB, APIs)
+
+## When Creating New Features
+
+1. Create folder structure: `src/modules/{feature}/{presentation,application,domain,infrastructure}/`
+2. Create `{feature}.module.ts` in infrastructure/ with dependency wiring
+3. Create `{feature}.controller.ts` in presentation/ with routes
+4. Create use cases in application/
+5. Create domain entities and interfaces in domain/
+6. Create repository implementation in infrastructure/
+7. Export controller from `index.ts`
+8. Add to `app.ts` with `.use({feature}Controller)`
+
+## Database Access
+
+- Always access database through repositories in `infrastructure/`
+- Use Drizzle ORM schemas from `@/drizzle/schema`
+- Repository interfaces defined in `domain/` layer
+- Repository implementations in `infrastructure/` layer
+
+## Error Handling
+
+- Use shared error handler plugin from `@/shared/presentation/error-handler`
+- Apply to app in `app.ts` before feature controllers
+
+## Naming Conventions
+
+- Controllers: `{feature}.controller.ts`
+- DTOs: `{feature}.dto.ts`
+- Modules: `{feature}.module.ts`
+- Use Cases: `{action}.use-case.ts` (e.g., `register.use-case.ts`)
+- Repositories: `{entity}.repository.ts`
+- Entities: `{entity}.entity.ts`
+- Interfaces: `{feature}.iface.ts`
