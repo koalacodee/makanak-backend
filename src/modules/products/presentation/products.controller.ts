@@ -1,0 +1,134 @@
+import { Elysia } from "elysia";
+import { t } from "elysia";
+import { productsModule } from "../infrastructure/products.module";
+import {
+  ProductDto,
+  ProductInputDto,
+  ProductQueryDto,
+  ProductsResponseDto,
+} from "./products.dto";
+
+export const productsController = new Elysia({ prefix: "/products" })
+  .use(productsModule)
+  .get(
+    "/",
+    async ({ query, getProductsUC, productRepo }) => {
+      const filters = {
+        category: query.category,
+        inStock: query.inStock,
+        page: query.page,
+        limit: query.limit,
+      };
+      const result = await getProductsUC.execute(filters, productRepo);
+      return {
+        data: result.data.map((p) => ({
+          ...p,
+          price: parseFloat(p.price),
+          originalPrice: p.originalPrice
+            ? parseFloat(p.originalPrice)
+            : undefined,
+        })),
+        pagination: result.pagination,
+      };
+    },
+    {
+      query: ProductQueryDto,
+      response: ProductsResponseDto,
+    }
+  )
+  .get(
+    "/:id",
+    async ({ params, getProductUC, productRepo }) => {
+      const product = await getProductUC.execute(params.id, productRepo);
+      return {
+        ...product,
+        price: parseFloat(product.price),
+        originalPrice: product.originalPrice
+          ? parseFloat(product.originalPrice)
+          : undefined,
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ format: "uuid" }),
+      }),
+      response: ProductDto,
+    }
+  )
+  .post(
+    "/",
+    async ({ body, createProductUC, productRepo }) => {
+      const product = await createProductUC.execute(
+        {
+          name: body.name,
+          price: body.price.toString(),
+          unit: body.unit,
+          category: body.category,
+          image: body.image,
+          description: body.description,
+          stock: body.stock,
+          originalPrice: body.originalPrice?.toString(),
+        },
+        productRepo
+      );
+      return {
+        ...product,
+        price: parseFloat(product.price),
+        originalPrice: product.originalPrice
+          ? parseFloat(product.originalPrice)
+          : undefined,
+      };
+    },
+    {
+      body: ProductInputDto,
+      response: ProductDto,
+    }
+  )
+  .put(
+    "/:id",
+    async ({ params, body, updateProductUC, productRepo }) => {
+      const updateData: any = {};
+      if (body.name !== undefined) updateData.name = body.name;
+      if (body.price !== undefined) updateData.price = body.price.toString();
+      if (body.unit !== undefined) updateData.unit = body.unit;
+      if (body.category !== undefined) updateData.category = body.category;
+      if (body.image !== undefined) updateData.image = body.image;
+      if (body.description !== undefined)
+        updateData.description = body.description;
+      if (body.stock !== undefined) updateData.stock = body.stock;
+      if (body.originalPrice !== undefined)
+        updateData.originalPrice = body.originalPrice.toString();
+
+      const product = await updateProductUC.execute(
+        params.id,
+        updateData,
+        productRepo
+      );
+      return {
+        ...product,
+        price: parseFloat(product.price),
+        originalPrice: product.originalPrice
+          ? parseFloat(product.originalPrice)
+          : undefined,
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ format: "uuid" }),
+      }),
+      body: ProductInputDto,
+      response: ProductDto,
+    }
+  )
+  .delete(
+    "/:id",
+    async ({ params, deleteProductUC, productRepo }) => {
+      await deleteProductUC.execute(params.id, productRepo);
+      return new Response(null, { status: 204 });
+    },
+    {
+      params: t.Object({
+        id: t.String({ format: "uuid" }),
+      }),
+    }
+  );
