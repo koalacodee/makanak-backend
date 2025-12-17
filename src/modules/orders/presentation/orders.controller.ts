@@ -51,7 +51,14 @@ export const ordersController = new Elysia({ prefix: "/orders" })
   )
   .post(
     "/",
-    async ({ body, createOrderUC, orderRepo }) => {
+    async ({
+      body,
+      createOrderUC,
+      orderRepo,
+      productRepo,
+      customerRepo,
+      settingsRepo,
+    }) => {
       const order = await createOrderUC.execute(
         {
           customerName: body.customerName,
@@ -64,7 +71,9 @@ export const ordersController = new Elysia({ prefix: "/orders" })
           pointsUsed: body.pointsUsed,
           pointsDiscount: body.pointsDiscount,
         },
-        orderRepo
+        orderRepo,
+        productRepo,
+        customerRepo
       );
       return {
         ...order,
@@ -145,7 +154,14 @@ export const ordersController = new Elysia({ prefix: "/orders" })
   )
   .patch(
     "/:id",
-    async ({ params, body, updateOrderUC, orderRepo }) => {
+    async ({
+      params,
+      body,
+      updateOrderUC,
+      orderRepo,
+      customerRepo,
+      settingsRepo,
+    }) => {
       const updateData: any = {};
       if (body.status !== undefined) updateData.status = body.status;
       if (body.driverId !== undefined) updateData.driverId = body.driverId;
@@ -155,7 +171,9 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       const order = await updateOrderUC.execute(
         params.id,
         updateData,
-        orderRepo
+        orderRepo,
+        customerRepo,
+        settingsRepo
       );
       return {
         ...order,
