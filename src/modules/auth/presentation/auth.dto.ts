@@ -1,31 +1,30 @@
-import { Type, Static } from "@sinclair/typebox";
+import { Static, t } from "elysia";
 
-export const LoginDto = Type.Object({
-  username: Type.String({ minLength: 1 }),
-  password: Type.String({ minLength: 1 }),
+export const LoginDto = t.Object({
+  username: t.String({ minLength: 1 }),
+  password: t.String({ minLength: 1 }),
 });
 
-export const LoginResponseDto = Type.Object({
-  token: Type.String(),
-  user: Type.Object({
-    id: Type.String({ format: "uuid" }),
-    username: Type.String(),
-    role: Type.Union([
-      Type.Literal("admin"),
-      Type.Literal("driver"),
-      Type.Literal("cs"),
-      Type.Literal("inventory"),
+export const LoginResponseDto = t.Object({
+  token: t.String(),
+  user: t.Object({
+    id: t.String({ format: "uuid" }),
+    username: t.String(),
+    role: t.Union([
+      t.Literal("admin"),
+      t.Literal("driver"),
+      t.Literal("cs"),
+      t.Literal("inventory"),
     ]),
   }),
 });
 
-export const RefreshTokenDto = Type.Object({
-  refreshToken: Type.String(),
+export const RefreshTokenDto = t.Object({
+  refreshToken: t.String(),
 });
 
-export const RefreshTokenResponseDto = Type.Object({
-  accessToken: Type.String(),
-  refreshToken: Type.String(),
+export const RefreshTokenResponseDto = t.Object({
+  accessToken: t.String(),
 });
 
 export type LoginInput = Static<typeof LoginDto>;

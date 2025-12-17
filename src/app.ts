@@ -8,6 +8,7 @@ import { staffController } from "./modules/staff";
 import { suppliersController } from "./modules/suppliers";
 import { settingsController } from "./modules/settings";
 import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
+import openapi from "@elysiajs/openapi";
 
 export const app = new Elysia()
   .use(errorHandler)
@@ -26,4 +27,15 @@ export const app = new Elysia()
       .use(suppliersController)
       .use(settingsController)
       .use(fileHubWebHookController)
+      .use(
+        openapi({
+          path: "openapi",
+          documentation: {
+            info: {
+              title: "Elysia Documentation",
+              version: "1.0.0",
+            },
+          },
+        })
+      )
   );

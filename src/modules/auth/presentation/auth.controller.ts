@@ -1,5 +1,4 @@
 import { Elysia } from "elysia";
-import { Type } from "@sinclair/typebox";
 import { authModule } from "../infrastructure/auth.module";
 import {
   LoginDto,
@@ -53,29 +52,29 @@ export const authController = new Elysia({ prefix: "/auth" })
   )
   .post(
     "/logout",
-    async ({ body, logoutUC, refreshTokenRepo, refreshJwt }) => {
+    async ({ cookie, logoutUC, refreshTokenRepo, refreshJwt }) => {
       // Verify token to get user ID
-      const payload = await refreshJwt.verify(body.refreshToken);
+      const payload = await refreshJwt.verify(cookie.refreshToken.value);
       if (!payload || typeof payload !== "object" || !("sub" in payload)) {
         // If token is invalid, still return 204 (idempotent)
         return new Response(null, { status: 204 });
       }
 
       await logoutUC.execute(
-        body.refreshToken,
+        cookie.refreshToken.value,
         payload.sub as string,
         refreshTokenRepo
       );
       return new Response(null, { status: 204 });
     },
     {
-      body: RefreshTokenDto,
+      cookie: RefreshTokenDto,
     }
   )
   .post(
     "/refresh",
     async ({
-      body,
+      cookie,
       refreshTokenUC,
       userRepo,
       refreshTokenRepo,
@@ -83,20 +82,26 @@ export const authController = new Elysia({ prefix: "/auth" })
       refreshJwt,
     }) => {
       const tokens = await refreshTokenUC.execute(
-        body.refreshToken,
+        cookie.refreshToken.value,
         userRepo,
         refreshTokenRepo,
         accessJwt,
         refreshJwt
       );
 
+      cookie.refreshToken.value = tokens.refreshToken;
+      cookie.refreshToken.httpOnly = true;
+      cookie.refreshToken.secure = true;
+      cookie.refreshToken.maxAge = 60 * 60 * 24 * 30; // 30 days
+      cookie.refreshToken.sameSite = "strict";
+      cookie.refreshToken.path = "/";
+
       return {
         accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
       };
     },
     {
-      body: RefreshTokenDto,
+      cookie: RefreshTokenDto,
       response: RefreshTokenResponseDto,
     }
   );

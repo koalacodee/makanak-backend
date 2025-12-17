@@ -9,5 +9,6 @@ serve({
   port,
   hostname,
 });
+console.log(app.routes.map((route) => route.path));
 
 console.log(`🦊 Elysia is running at http://${hostname}:${port}`);
