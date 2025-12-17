@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { errorHandler } from "./shared/presentation/error-handler";
+import { authController } from "./modules/auth";
 import { productsController } from "./modules/products";
 
 export const app = new Elysia()
@@ -9,4 +10,4 @@ export const app = new Elysia()
     version: "1.0.0",
     description: "Grocery E-Commerce API",
   }))
-  .group("/v1", (app) => app.use(productsController));
+  .group("/v1", (app) => app.use(authController).use(productsController));

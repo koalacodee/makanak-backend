@@ -1,30 +1,67 @@
 export class NotFoundError extends Error {
-  constructor(message: string = "Resource not found") {
-    super(message);
+  status = 404;
+
+  constructor(protected details: Array<{ path: string; message: string }>) {
+    super("Resource not found");
     this.name = "NotFoundError";
+  }
+
+  toResponse() {
+    return {
+      error: "Not Found",
+      status: this.status,
+      details: this.details,
+    };
   }
 }
 
 export class BadRequestError extends Error {
-  constructor(message: string = "Bad request") {
-    super(message);
+  status = 400;
+
+  constructor(protected details: Array<{ path: string; message: string }>) {
+    super("Bad request");
     this.name = "BadRequestError";
+  }
+
+  toResponse() {
+    return {
+      error: "Bad Request",
+      status: this.status,
+      details: this.details,
+    };
   }
 }
 
 export class UnauthorizedError extends Error {
-  constructor(message: string = "Unauthorized") {
-    super(message);
+  status = 401;
+
+  constructor(protected details: Array<{ path: string; message: string }>) {
+    super("Unauthorized");
     this.name = "UnauthorizedError";
+  }
+
+  toResponse() {
+    return {
+      error: "Unauthorized",
+      status: this.status,
+      details: this.details,
+    };
   }
 }
 
 export class ValidationError extends BadRequestError {
-  constructor(
-    message: string = "Validation failed",
-    public details?: Record<string, unknown>
-  ) {
-    super(message);
+  status = 400;
+
+  constructor(details: Array<{ path: string; message: string }>) {
+    super(details);
     this.name = "ValidationError";
+  }
+
+  toResponse() {
+    return {
+      error: "Bad Request",
+      status: this.status,
+      details: this.details,
+    };
   }
 }

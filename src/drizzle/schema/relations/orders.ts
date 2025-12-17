@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm";
 import { orders } from "../orders";
 import { customers } from "../customers";
-import { staffMembers } from "../staffMembers";
+import { users } from "../users";
 import { orderItems } from "../orderItems";
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -9,9 +9,9 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     fields: [orders.phone],
     references: [customers.phone],
   }),
-  driver: one(staffMembers, {
+  driver: one(users, {
     fields: [orders.driverId],
-    references: [staffMembers.id],
+    references: [users.id],
   }),
   items: many(orderItems),
 }));
