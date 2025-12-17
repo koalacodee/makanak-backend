@@ -24,12 +24,6 @@ export interface WebhookDataFull {
     uploadLength?: number;
     uploadKey: string;
   };
-  metadata?: {
-    expiration?: string;
-    isGlobal?: "0" | "1";
-    originalFilename?: string;
-    uploadKey?: string;
-  };
   timestamp: string; // ISO 8601 format
 }
 
@@ -74,8 +68,6 @@ export class FileHub {
   async generateUploadToken(options: {
     expiresInMs: number;
     targetId?: string;
-    userId?: string;
-    guestId?: string;
   }): Promise<Upload> {
     if (!this.apiKey) {
       throw new Error("FileHub API key is not set");

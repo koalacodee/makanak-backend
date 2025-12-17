@@ -7,6 +7,7 @@ import { ordersController } from "./modules/orders";
 import { staffController } from "./modules/staff";
 import { suppliersController } from "./modules/suppliers";
 import { settingsController } from "./modules/settings";
+import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
 
 export const app = new Elysia()
   .use(errorHandler)
@@ -24,4 +25,5 @@ export const app = new Elysia()
       .use(staffController)
       .use(suppliersController)
       .use(settingsController)
+      .use(fileHubWebHookController)
   );

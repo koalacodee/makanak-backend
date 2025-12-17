@@ -9,6 +9,7 @@ export * from "./suppliers";
 export * from "./storeSettings";
 export * from "./refreshTokens";
 export * from "./staffMembers";
+export * from "./attachments";
 
 // Export all relations
 export * from "./relations";
