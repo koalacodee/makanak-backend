@@ -20,15 +20,25 @@ export class GetProductsUseCase {
       totalPages: number;
     };
   }> {
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
 
     // Validate pagination parameters
     if (page < 1) {
-      throw new ValidationError("Page must be greater than 0");
+      throw new ValidationError([
+        {
+          path: "page",
+          message: "Page must be greater than 0",
+        },
+      ]);
     }
     if (limit < 1 || limit > 100) {
-      throw new ValidationError("Limit must be between 1 and 100");
+      throw new ValidationError([
+        {
+          path: "limit",
+          message: "Limit must be between 1 and 100",
+        },
+      ]);
     }
 
     const result = await repo.findAll({

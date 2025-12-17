@@ -20,8 +20,8 @@ export class GetOrdersUseCase {
       totalPages: number;
     };
   }> {
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
 
     // Validate pagination parameters
     if (page < 1) {
