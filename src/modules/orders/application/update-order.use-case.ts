@@ -1,8 +1,22 @@
 import type { IOrderRepository } from "../domain/orders.iface";
 import type { ICustomerRepository } from "../../customers/domain/customers.iface";
 import type { ISettingsRepository } from "../../settings/domain/settings.iface";
+import type { IProductRepository } from "../../products/domain/products.iface";
 import type { Order, OrderStatus } from "../domain/order.entity";
-import { NotFoundError } from "../../../shared/presentation/errors";
+import {
+  NotFoundError,
+  BadRequestError,
+} from "../../../shared/presentation/errors";
+
+// Valid status transitions
+const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: ["processing", "cancelled"],
+  processing: ["ready", "cancelled"],
+  ready: ["out_for_delivery", "cancelled"],
+  out_for_delivery: ["delivered"],
+  delivered: [], // Terminal state
+  cancelled: [], // Terminal state
+};
 
 export class UpdateOrderUseCase {
   async execute(
@@ -14,7 +28,8 @@ export class UpdateOrderUseCase {
     },
     orderRepo: IOrderRepository,
     customerRepo: ICustomerRepository,
-    settingsRepo: ISettingsRepository
+    settingsRepo: ISettingsRepository,
+    productRepo: IProductRepository
   ): Promise<Order> {
     // Check if order exists
     const existing = await orderRepo.findById(id);
@@ -27,6 +42,28 @@ export class UpdateOrderUseCase {
       ]);
     }
 
+    // Validate status transition if status is being changed
+    if (data.status && data.status !== existing.status) {
+      const allowedTransitions = VALID_TRANSITIONS[existing.status];
+      if (!allowedTransitions.includes(data.status)) {
+        throw new BadRequestError([
+          {
+            path: "status",
+            message: `Invalid status transition from "${existing.status}" to "${
+              data.status
+            }". Allowed transitions: ${
+              allowedTransitions.join(", ") || "none"
+            }`,
+          },
+        ]);
+      }
+    }
+
+    // Handle cancellation: restore stock and points
+    if (data.status === "cancelled" && existing.status !== "cancelled") {
+      await this.restoreStockAndPoints(existing, productRepo, customerRepo);
+    }
+
     // Update order
     const updatedOrder = await orderRepo.update(id, data);
 
@@ -36,6 +73,32 @@ export class UpdateOrderUseCase {
     }
 
     return updatedOrder;
+  }
+
+  private async restoreStockAndPoints(
+    order: Order,
+    productRepo: IProductRepository,
+    customerRepo: ICustomerRepository
+  ): Promise<void> {
+    // Restore stock for all items
+    for (const item of order.items) {
+      const product = await productRepo.findById(item.id);
+      if (product) {
+        await productRepo.update(item.id, {
+          stock: product.stock + item.quantity,
+        });
+      }
+    }
+
+    // Restore points if points were used
+    if (order.pointsUsed && order.pointsUsed > 0) {
+      const customer = await customerRepo.findByPhone(order.phone);
+      if (customer) {
+        await customerRepo.update(order.phone, {
+          pointsDelta: order.pointsUsed,
+        });
+      }
+    }
   }
 
   private async updateCustomerPoints(
@@ -61,21 +124,18 @@ export class UpdateOrderUseCase {
     );
 
     // Points used was already deducted at order creation
-    const pointsUsed = order.pointsUsed || 0;
-
-    // Calculate net points change
-    const pointsDelta = pointsEarned - pointsUsed;
+    // Now we only add the earned points
+    if (pointsEarned > 0) {
+      await customerRepo.update(order.phone, {
+        pointsDelta: pointsEarned,
+      });
+    }
 
     // Update total spent and total orders
     const currentTotalSpent = customer.totalSpent
       ? parseFloat(customer.totalSpent)
       : 0;
     const currentTotalOrders = customer.totalOrders || 0;
-
-    // Update customer: points delta, total spent, and total orders in one operation
-    await customerRepo.update(order.phone, {
-      pointsDelta: pointsDelta, // Net change in points
-    });
 
     await customerRepo.upsert({
       phone: order.phone,

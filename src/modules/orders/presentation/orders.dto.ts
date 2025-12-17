@@ -48,6 +48,7 @@ export const OrderDto = t.Object({
   date: t.Optional(t.String({ format: "date-time" })),
   timestamp: t.Optional(t.Integer()),
   deliveryTimestamp: t.Optional(t.Integer()),
+  uploadKey: t.Optional(t.String()), // File upload token (if attach=true)
 });
 
 export const OrderItemInputDto = t.Object({
@@ -65,6 +66,7 @@ export const OrderInputDto = t.Object({
   paymentMethod: PaymentMethodEnum,
   pointsUsed: t.Optional(t.Integer({ minimum: 0 })),
   pointsDiscount: t.Optional(t.Number({ minimum: 0 })),
+  attach: t.Optional(t.Boolean()), // Request file upload token
 });
 
 export const OrderUpdateDto = t.Object({

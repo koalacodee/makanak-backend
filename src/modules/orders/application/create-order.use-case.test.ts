@@ -246,6 +246,20 @@ describe("CreateOrderUseCase", () => {
   });
 
   it("should allow optional fields", async () => {
+    // Setup mock to return customer with enough points
+    mockCustomerRepo.findByPhone = mock(() =>
+      Promise.resolve({
+        phone: "1234567890",
+        name: "John Doe",
+        address: "123 Main St",
+        points: 200, // Enough points
+        totalSpent: "500.00",
+        totalOrders: 5,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Customer)
+    );
+
     const orderData = {
       customerName: "John Doe",
       phone: "1234567890",
@@ -266,5 +280,9 @@ describe("CreateOrderUseCase", () => {
     );
 
     expect(mockOrderRepo.create).toHaveBeenCalled();
+    expect(mockCustomerRepo.findByPhone).toHaveBeenCalledWith("1234567890");
+    expect(mockCustomerRepo.update).toHaveBeenCalledWith("1234567890", {
+      pointsDelta: -100,
+    });
   });
 });

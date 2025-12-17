@@ -74,6 +74,7 @@ export class CreateOrderUseCase {
     const subtotal = data.subtotal || 0;
     const deliveryFee = data.deliveryFee || 0;
     const pointsDiscount = data.pointsDiscount || 0;
+    const pointsUsed = data.pointsUsed || 0;
 
     // Create or update customer
     const existingCustomer = await customerRepo.findByPhone(data.phone);
@@ -92,6 +93,33 @@ export class CreateOrderUseCase {
         points: 0,
         totalSpent: 0,
         totalOrders: 0,
+      });
+    }
+
+    // Validate and deduct points if used
+    if (pointsUsed > 0) {
+      const customer = await customerRepo.findByPhone(data.phone);
+      if (!customer) {
+        throw new BadRequestError([
+          {
+            path: "phone",
+            message: "Customer not found",
+          },
+        ]);
+      }
+
+      if (customer.points < pointsUsed) {
+        throw new BadRequestError([
+          {
+            path: "pointsUsed",
+            message: `Insufficient points. Available: ${customer.points}, Required: ${pointsUsed}`,
+          },
+        ]);
+      }
+
+      // Deduct points immediately
+      await customerRepo.update(data.phone, {
+        pointsDelta: -pointsUsed,
       });
     }
 

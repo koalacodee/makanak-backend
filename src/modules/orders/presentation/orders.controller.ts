@@ -9,6 +9,8 @@ import {
   OrdersResponseDto,
 } from "./orders.dto";
 import { authGuard } from "../../auth/presentation/auth.guard";
+import { FileHub } from "@/shared/filehub";
+import redis from "@/shared/redis";
 
 export const ordersController = new Elysia({ prefix: "/orders" })
   .use(ordersModule)
@@ -75,6 +77,27 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         productRepo,
         customerRepo
       );
+
+      // Handle file upload flow if attach=true
+      let uploadKey: string | undefined;
+      if (body.attach === true) {
+        try {
+          const fileHub = FileHub.instance();
+          const upload = await fileHub.generateUploadToken({
+            expiresInMs: 3600000, // 1 hour
+            targetId: order.id,
+          });
+
+          // Store mapping in Redis for webhook handler
+          await redis.set(`filehub:${upload.uploadKey}`, order.id, "EX", 3600); // 1 hour expiry
+
+          uploadKey = upload.uploadKey;
+        } catch (error) {
+          // Log error but don't fail the order creation
+          console.error("Failed to generate upload token:", error);
+        }
+      }
+
       return {
         ...order,
         items: order.items.map((item) => ({
@@ -98,6 +121,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         date: order.date?.toISOString() ?? undefined,
         timestamp: order.timestamp ?? undefined,
         deliveryTimestamp: order.deliveryTimestamp ?? undefined,
+        uploadKey,
       };
     },
     {
@@ -161,6 +185,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       orderRepo,
       customerRepo,
       settingsRepo,
+      productRepo,
     }) => {
       const updateData: any = {};
       if (body.status !== undefined) updateData.status = body.status;
@@ -173,7 +198,8 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         updateData,
         orderRepo,
         customerRepo,
-        settingsRepo
+        settingsRepo,
+        productRepo
       );
       return {
         ...order,

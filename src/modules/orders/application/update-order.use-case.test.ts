@@ -3,8 +3,10 @@ import { UpdateOrderUseCase } from "./update-order.use-case";
 import type { IOrderRepository } from "../domain/orders.iface";
 import type { ICustomerRepository } from "../../customers/domain/customers.iface";
 import type { ISettingsRepository } from "../../settings/domain/settings.iface";
+import type { IProductRepository } from "../../products/domain/products.iface";
 import type { Order } from "../domain/order.entity";
 import type { Customer } from "../../customers/domain/customer.entity";
+import type { Product } from "../../products/domain/product.entity";
 import { NotFoundError } from "../../../shared/presentation/errors";
 
 describe("UpdateOrderUseCase", () => {
@@ -12,6 +14,7 @@ describe("UpdateOrderUseCase", () => {
   let mockOrderRepo: IOrderRepository;
   let mockCustomerRepo: ICustomerRepository;
   let mockSettingsRepo: ISettingsRepository;
+  let mockProductRepo: IProductRepository;
 
   beforeEach(() => {
     useCase = new UpdateOrderUseCase();
@@ -74,6 +77,25 @@ describe("UpdateOrderUseCase", () => {
       create: mock(() => Promise.resolve({} as any)),
       update: mock(() => Promise.resolve({} as any)),
     };
+
+    mockProductRepo = {
+      findAll: mock(() => Promise.resolve({ data: [], total: 0 })),
+      findById: mock(() =>
+        Promise.resolve({
+          id: "product-1",
+          name: "Product 1",
+          price: "10.00",
+          unit: "kg",
+          category: "cat-1",
+          image: "https://...",
+          description: "Description",
+          stock: 10,
+        } as Product)
+      ),
+      create: mock(() => Promise.resolve({} as Product)),
+      update: mock(() => Promise.resolve({} as Product)),
+      delete: mock(() => Promise.resolve()),
+    };
   });
 
   it("should update order status successfully", async () => {
@@ -96,7 +118,8 @@ describe("UpdateOrderUseCase", () => {
       updateData,
       mockOrderRepo,
       mockCustomerRepo,
-      mockSettingsRepo
+      mockSettingsRepo,
+      mockProductRepo
     );
 
     expect(result.status).toBe("processing");
@@ -124,7 +147,8 @@ describe("UpdateOrderUseCase", () => {
       updateData,
       mockOrderRepo,
       mockCustomerRepo,
-      mockSettingsRepo
+      mockSettingsRepo,
+      mockProductRepo
     );
 
     expect(mockOrderRepo.update).toHaveBeenCalledWith("1", updateData);
@@ -150,7 +174,8 @@ describe("UpdateOrderUseCase", () => {
       updateData,
       mockOrderRepo,
       mockCustomerRepo,
-      mockSettingsRepo
+      mockSettingsRepo,
+      mockProductRepo
     );
 
     expect(mockOrderRepo.update).toHaveBeenCalledWith("1", updateData);
@@ -164,7 +189,7 @@ describe("UpdateOrderUseCase", () => {
       address: "123 Main St",
       items: [],
       total: "100.00",
-      status: "processing",
+      status: "out_for_delivery", // Valid transition to "delivered"
       pointsUsed: 50,
       createdAt: new Date(),
     };
@@ -183,7 +208,8 @@ describe("UpdateOrderUseCase", () => {
       updateData,
       mockOrderRepo,
       mockCustomerRepo,
-      mockSettingsRepo
+      mockSettingsRepo,
+      mockProductRepo
     );
 
     expect(mockOrderRepo.update).toHaveBeenCalledWith("1", updateData);
@@ -220,7 +246,7 @@ describe("UpdateOrderUseCase", () => {
       address: "123 Main St",
       items: [],
       total: "100.00",
-      status: "processing",
+      status: "out_for_delivery", // Valid transition to "delivered"
       createdAt: new Date(),
     };
 
@@ -238,7 +264,8 @@ describe("UpdateOrderUseCase", () => {
       updateData,
       mockOrderRepo,
       mockCustomerRepo,
-      mockSettingsRepo
+      mockSettingsRepo,
+      mockProductRepo
     );
 
     expect(mockCustomerRepo.update).not.toHaveBeenCalled();
@@ -253,7 +280,8 @@ describe("UpdateOrderUseCase", () => {
         { status: "processing" },
         mockOrderRepo,
         mockCustomerRepo,
-        mockSettingsRepo
+        mockSettingsRepo,
+        mockProductRepo
       )
     ).rejects.toThrow(NotFoundError);
     expect(mockOrderRepo.update).not.toHaveBeenCalled();
