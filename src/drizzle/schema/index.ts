@@ -7,8 +7,8 @@ export * from "./orderItems";
 export * from "./users";
 export * from "./suppliers";
 export * from "./storeSettings";
-export * from "./users";
 export * from "./refreshTokens";
+export * from "./staffMembers";
 
 // Export all relations
 export * from "./relations";

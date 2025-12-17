@@ -19,6 +19,9 @@ describe("LoginUseCase", () => {
     mockUserRepo = {
       findById: mock(() => Promise.resolve(null)),
       findByUsername: mock(() => Promise.resolve(null)),
+      create: mock(() => Promise.resolve({} as User)),
+      update: mock(() => Promise.resolve({} as User)),
+      delete: mock(() => Promise.resolve()),
       updateLastLogin: mock(() => Promise.resolve()),
     };
     mockRefreshTokenRepo = {

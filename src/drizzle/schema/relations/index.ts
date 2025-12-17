@@ -5,3 +5,4 @@ export * from "./orderItems";
 export * from "./customers";
 export * from "./users";
 export * from "./refreshTokens";
+export * from "./staffMembers";

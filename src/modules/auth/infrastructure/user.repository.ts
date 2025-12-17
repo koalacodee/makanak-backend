@@ -35,6 +35,46 @@ export class UserRepository implements IUserRepository {
     return this.mapToEntity(result[0]);
   }
 
+  async create(data: Omit<User, "id"> | User): Promise<User> {
+    const userId = "id" in data && data.id ? data.id : crypto.randomUUID();
+
+    const [result] = await this.database
+      .insert(users)
+      .values({
+        id: userId,
+        username: data.username,
+        passwordHash: data.passwordHash,
+        role: data.role,
+        createdAt: data.createdAt || new Date(),
+        updatedAt: data.updatedAt || new Date(),
+        lastLoginAt: data.lastLoginAt || null,
+      })
+      .returning();
+
+    return this.mapToEntity(result);
+  }
+
+  async update(id: string, data: Partial<Omit<User, "id">>): Promise<User> {
+    const updateData: any = {};
+    if (data.username !== undefined) updateData.username = data.username;
+    if (data.passwordHash !== undefined)
+      updateData.passwordHash = data.passwordHash;
+    if (data.role !== undefined) updateData.role = data.role;
+    updateData.updatedAt = new Date();
+
+    const [result] = await this.database
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+
+    return this.mapToEntity(result);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.database.delete(users).where(eq(users.id, id));
+  }
+
   async updateLastLogin(id: string): Promise<void> {
     await this.database
       .update(users)

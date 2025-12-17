@@ -3,6 +3,9 @@ import type { User, RefreshToken } from "./user.entity";
 export interface IUserRepository {
   findByUsername(username: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
+  create(data: Omit<User, "id"> | User): Promise<User>;
+  update(id: string, data: Partial<Omit<User, "id">>): Promise<User>;
+  delete(id: string): Promise<void>;
   updateLastLogin(id: string): Promise<void>;
 }
 

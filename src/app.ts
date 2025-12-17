@@ -4,6 +4,7 @@ import { authController } from "./modules/auth";
 import { productsController } from "./modules/products";
 import { categoriesController } from "./modules/categories";
 import { ordersController } from "./modules/orders";
+import { staffController } from "./modules/staff";
 
 export const app = new Elysia()
   .use(errorHandler)
@@ -18,4 +19,5 @@ export const app = new Elysia()
       .use(productsController)
       .use(categoriesController)
       .use(ordersController)
+      .use(staffController)
   );
