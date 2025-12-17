@@ -7,6 +7,8 @@ import { ordersController } from "./modules/orders";
 import { staffController } from "./modules/staff";
 import { suppliersController } from "./modules/suppliers";
 import { settingsController } from "./modules/settings";
+import { customersController } from "./modules/customers";
+import { cartController } from "./modules/cart";
 import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
 import openapi from "@elysiajs/openapi";
 
@@ -26,6 +28,8 @@ export const app = new Elysia()
       .use(staffController)
       .use(suppliersController)
       .use(settingsController)
+      .use(customersController)
+      .use(cartController)
       .use(fileHubWebHookController)
       .use(
         openapi({
