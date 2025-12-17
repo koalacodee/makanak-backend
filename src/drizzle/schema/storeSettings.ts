@@ -1,14 +1,9 @@
-import {
-  pgTable,
-  uuid,
-  jsonb,
-  decimal,
-  boolean,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, jsonb, decimal, timestamp } from "drizzle-orm/pg-core";
 
 export const storeSettings = pgTable("store_settings", {
-  id: uuid("id").primaryKey(),
+  id: uuid("id")
+    .primaryKey()
+    .$defaultFn(() => Bun.randomUUIDv7()),
   pointsSystem: jsonb("points_system").$type<{
     active: boolean;
     value: number;
