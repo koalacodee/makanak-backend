@@ -67,7 +67,7 @@ export class StaffRepository implements IStaffRepository {
     specialization?: string;
     isOnline?: boolean;
   }): Promise<StaffMember> {
-    const id = crypto.randomUUID();
+    const id = Bun.randomUUIDv7();
 
     const [result] = await this.database
       .insert(staffMembers)

@@ -10,7 +10,7 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
   async create(
     token: Omit<RefreshToken, "id" | "createdAt">
   ): Promise<RefreshToken> {
-    const id = crypto.randomUUID();
+    const id = Bun.randomUUIDv7();
 
     const [result] = await this.database
       .insert(refreshTokens)

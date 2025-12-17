@@ -39,7 +39,7 @@ export class CategoryRepository implements ICategoryRepository {
 
   async create(data: Omit<Category, "id"> | Category): Promise<Category> {
     // Use provided ID if available, otherwise generate one
-    const id = "id" in data && data.id ? data.id : crypto.randomUUID();
+    const id = "id" in data && data.id ? data.id : Bun.randomUUIDv7();
 
     const [result] = await this.database
       .insert(categories)

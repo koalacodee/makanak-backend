@@ -48,7 +48,7 @@ export class SupplierRepository implements ISupplierRepository {
   }
 
   async create(data: SupplierInput): Promise<Supplier> {
-    const id = crypto.randomUUID();
+    const id = Bun.randomUUIDv7();
 
     const [result] = await this.database
       .insert(suppliers)

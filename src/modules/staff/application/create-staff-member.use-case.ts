@@ -62,7 +62,7 @@ export class CreateStaffMemberUseCase {
     const passwordHash = await Bun.password.hash(data.password, "argon2id");
 
     // Create user first
-    const userId = crypto.randomUUID();
+    const userId = Bun.randomUUIDv7();
     await userRepo.create({
       id: userId,
       username: data.username,

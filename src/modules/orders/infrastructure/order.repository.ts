@@ -78,7 +78,7 @@ export class OrderRepository implements IOrderRepository {
     pointsUsed?: number;
     pointsDiscount?: string;
   }): Promise<Order> {
-    const orderId = crypto.randomUUID();
+    const orderId = Bun.randomUUIDv7();
 
     // Calculate total if not provided
     let total = "0";
@@ -125,7 +125,7 @@ export class OrderRepository implements IOrderRepository {
 
         const productPrice = product[0].price || "0";
 
-        const orderItemId = crypto.randomUUID();
+        const orderItemId = Bun.randomUUIDv7();
         await this.database.insert(orderItems).values({
           id: orderItemId,
           orderId: orderId,

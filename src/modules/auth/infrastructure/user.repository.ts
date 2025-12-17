@@ -36,7 +36,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async create(data: Omit<User, "id"> | User): Promise<User> {
-    const userId = "id" in data && data.id ? data.id : crypto.randomUUID();
+    const userId = "id" in data && data.id ? data.id : Bun.randomUUIDv7();
 
     const [result] = await this.database
       .insert(users)

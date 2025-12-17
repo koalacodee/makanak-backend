@@ -66,7 +66,7 @@ export class ProductRepository implements IProductRepository {
   }
 
   async create(data: Omit<Product, "id">): Promise<Product> {
-    const id = crypto.randomUUID(); // Will be replaced with Bun.randomUUIDv7() when available
+    const id = Bun.randomUUIDv7(); // Will be replaced with Bun.randomUUIDv7() when available
 
     const [result] = await this.database
       .insert(products)
