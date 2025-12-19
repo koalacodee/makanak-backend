@@ -48,7 +48,6 @@ export class CategoryRepository implements ICategoryRepository {
         name: data.name,
         icon: data.icon,
         color: data.color,
-        image: data.image,
         isHidden: data.isHidden ?? false,
         isLocked: data.isLocked ?? false,
       })
@@ -65,7 +64,6 @@ export class CategoryRepository implements ICategoryRepository {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.icon !== undefined) updateData.icon = data.icon;
     if (data.color !== undefined) updateData.color = data.color;
-    if (data.image !== undefined) updateData.image = data.image;
     if (data.isHidden !== undefined) updateData.isHidden = data.isHidden;
     if (data.isLocked !== undefined) updateData.isLocked = data.isLocked;
 
@@ -88,7 +86,6 @@ export class CategoryRepository implements ICategoryRepository {
       name: row.name,
       icon: row.icon,
       color: row.color,
-      image: row.image,
       isHidden: row.isHidden,
       isLocked: row.isLocked,
     };

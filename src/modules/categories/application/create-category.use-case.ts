@@ -1,11 +1,31 @@
 import type { ICategoryRepository } from "../domain/categories.iface";
 import type { Category } from "../domain/category.entity";
-
+import filehub from "@/shared/filehub";
+import redis from "@/shared/redis";
 export class CreateCategoryUseCase {
   async execute(
     data: Omit<Category, "id"> | Category,
-    repo: ICategoryRepository
-  ): Promise<Category> {
-    return await repo.create(data);
+    repo: ICategoryRepository,
+    attachWithFileExtension?: string
+  ): Promise<{ category: Category; uploadUrl?: string }> {
+    const cat = await repo.create(data);
+
+    if (attachWithFileExtension) {
+      const upload = await filehub.getSignedPutUrl(
+        3600 * 24 * 7,
+        attachWithFileExtension
+      );
+      await redis.set(
+        `filehub:${upload.filename}`,
+        cat.id,
+        "EX",
+        3600 * 24 * 7
+      );
+      return {
+        category: cat,
+        uploadUrl: upload.signedUrl,
+      };
+    }
+    return { category: cat };
   }
 }

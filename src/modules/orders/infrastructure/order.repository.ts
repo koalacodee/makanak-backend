@@ -1,8 +1,8 @@
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, inArray } from "drizzle-orm";
 import { orders, orderItems, products } from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { IOrderRepository } from "../domain/orders.iface";
-import type { Order, CartItem } from "../domain/order.entity";
+import type { Order, OrderItem, OrderStatus } from "../domain/order.entity";
 
 export class OrderRepository implements IOrderRepository {
   constructor(private database: typeof db) {}
@@ -27,48 +27,45 @@ export class OrderRepository implements IOrderRepository {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const [orderData, totalResult] = await Promise.all([
-      this.database
-        .select()
-        .from(orders)
-        .where(whereClause)
-        .limit(limit)
-        .offset(offset)
-        .orderBy(desc(orders.createdAt)),
-      this.database.select({ count: count() }).from(orders).where(whereClause),
-    ]);
-
-    // Fetch order items for each order
-    const ordersWithItems = await Promise.all(
-      orderData.map(async (order) => {
-        const items = await this.fetchOrderItems(order.id);
-        return this.mapToEntity(order, items);
-      })
-    );
+    const result = await this.database.query.orders.findMany({
+      where: whereClause,
+      limit: limit,
+      offset: offset,
+      orderBy: desc(orders.createdAt),
+      with: {
+        items: true,
+      },
+    });
 
     return {
-      data: ordersWithItems,
-      total: totalResult[0]?.count || 0,
+      data: result.map((order) =>
+        this.mapToEntity(order, order.items.map(this.mapOrderItemToEntity))
+      ),
+      total: result.length,
     };
   }
 
   async findById(id: string): Promise<Order | null> {
-    const result = await this.database
-      .select()
-      .from(orders)
-      .where(eq(orders.id, id))
-      .limit(1);
+    const result = await this.database.query.orders.findFirst({
+      where: eq(orders.id, id),
+      with: {
+        items: true,
+      },
+    });
 
-    if (result.length === 0) {
+    if (!result) {
       return null;
     }
 
-    const items = await this.fetchOrderItems(id);
-    return this.mapToEntity(result[0], items);
+    return this.mapToEntity(
+      result,
+      result.items.map(this.mapOrderItemToEntity)
+    );
   }
 
   async create(data: {
     customerName: string;
+    referenceCode?: string;
     phone: string;
     address: string;
     items: Array<{ productId: string; quantity: number }>;
@@ -91,75 +88,83 @@ export class OrderRepository implements IOrderRepository {
       total = (subtotalNum + deliveryFeeNum - pointsDiscountNum).toString();
     }
 
-    // Create order
-    const [order] = await this.database
-      .insert(orders)
-      .values({
-        id: orderId,
-        customerName: data.customerName,
-        phone: data.phone,
-        address: data.address,
-        subtotal: data.subtotal || null,
-        deliveryFee: data.deliveryFee || null,
-        total,
-        status: "pending",
-        paymentMethod: data.paymentMethod as any,
-        pointsUsed: data.pointsUsed || 0,
-        pointsDiscount: data.pointsDiscount || "0",
-      })
-      .returning();
+    const order = await this.database.transaction(async (tx) => {
+      // Create order
+      const [order] = await tx
+        .insert(orders)
+        .values({
+          id: orderId,
+          customerName: data.customerName,
+          referenceCode: data.referenceCode,
+          phone: data.phone,
+          address: data.address,
+          subtotal: data.subtotal || null,
+          deliveryFee: data.deliveryFee || null,
+          total,
+          status: "pending",
+          paymentMethod: data.paymentMethod as any,
+          pointsUsed: data.pointsUsed || 0,
+          pointsDiscount: data.pointsDiscount || "0",
+        })
+        .returning();
 
-    // Create order items and fetch product details
-    const orderItemsData = await Promise.all(
-      data.items.map(async (item) => {
-        // Fetch product to get price
-        const product = await this.database
-          .select()
-          .from(products)
-          .where(eq(products.id, item.productId))
-          .limit(1);
+      // 1.  Collect the product ids we need
+      const productIds = data.items.map((i) => i.productId);
 
-        if (product.length === 0) {
-          throw new Error(`Product ${item.productId} not found`);
+      // 2.  One SELECT for every product
+      const productsRows = await tx
+        .select()
+        .from(products)
+        .where(inArray(products.id, productIds));
+
+      // 3.  Build a Map for O(1) look-ups
+      const productById = new Map(productsRows.map((p) => [p.id, p]));
+
+      // 4.  Make sure nothing is missing
+      for (const id of productIds) {
+        if (!productById.has(id)) {
+          throw new Error(`Product ${id} not found`);
         }
+      }
 
-        const productPrice = product[0].price || "0";
+      // 5.  Build the rows to insert
+      const rowsToInsert = data.items.map((item) => ({
+        id: Bun.randomUUIDv7(),
+        orderId: orderId,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: productById.get(item.productId)!.price ?? "0",
+      }));
 
-        const orderItemId = Bun.randomUUIDv7();
-        await this.database.insert(orderItems).values({
-          id: orderItemId,
-          orderId: orderId,
-          productId: item.productId,
-          quantity: item.quantity,
-          price: productPrice,
-        });
+      // 6.  One INSERT … RETURNING *  (bulk)
+      const insertedRows = await tx
+        .insert(orderItems)
+        .values(rowsToInsert)
+        .returning(); // ← Drizzle gives you the typed rows back
 
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          price: productPrice,
-        };
-      })
-    );
+      return { order, insertedRows };
+    });
 
     // Fetch full order with items
-    const items = await this.fetchOrderItems(orderId);
-    return this.mapToEntity(order, items);
+    return this.mapToEntity(
+      order.order,
+      order.insertedRows.map(this.mapOrderItemToEntity)
+    );
   }
 
   async update(
     id: string,
     data: {
-      status?: string;
+      status?: OrderStatus;
       driverId?: string;
-      receiptImage?: string;
+      deliveredAt?: Date;
     }
   ): Promise<Order> {
-    const updateData: any = {};
+    const updateData: Partial<typeof orders.$inferInsert> = {};
     if (data.status !== undefined) updateData.status = data.status;
     if (data.driverId !== undefined) updateData.driverId = data.driverId;
-    if (data.receiptImage !== undefined)
-      updateData.receiptImage = data.receiptImage;
+    if (data.deliveredAt !== undefined)
+      updateData.deliveredAt = data.deliveredAt;
 
     // If status is delivered, set deliveredAt
     if (data.status === "delivered") {
@@ -177,56 +182,51 @@ export class OrderRepository implements IOrderRepository {
     return this.mapToEntity(result, items);
   }
 
-  private async fetchOrderItems(orderId: string): Promise<CartItem[]> {
+  private async fetchOrderItems(orderId: string): Promise<OrderItem[]> {
     const items = await this.database
-      .select({
-        orderItem: orderItems,
-        product: products,
-      })
+      .select()
       .from(orderItems)
-      .innerJoin(products, eq(orderItems.productId, products.id))
       .where(eq(orderItems.orderId, orderId));
 
-    return items.map((item) => ({
-      id: item.product.id,
-      name: item.product.name,
-      price: parseFloat(item.orderItem.price || "0"),
-      unit: item.product.unit,
-      category: item.product.categoryId,
-      image: item.product.image,
-      description: item.product.description,
-      stock: item.product.stock,
-      originalPrice: item.product.originalPrice
-        ? parseFloat(item.product.originalPrice)
-        : null,
-      quantity: item.orderItem.quantity,
-    }));
+    return items.map(this.mapOrderItemToEntity);
   }
 
   private mapToEntity(
     row: typeof orders.$inferSelect,
-    items: CartItem[]
+    items: OrderItem[]
   ): Order {
     return {
       id: row.id,
       customerName: row.customerName,
+      referenceCode: row.referenceCode || undefined,
       phone: row.phone,
       address: row.address,
-      items,
-      subtotal: row.subtotal || null,
-      deliveryFee: row.deliveryFee || null,
-      total: row.total || "0",
+      orderItems: items,
+      subtotal: row.subtotal ? parseFloat(row.subtotal) : undefined,
+      deliveryFee: row.deliveryFee ? parseFloat(row.deliveryFee) : undefined,
+      total: row.total ? parseFloat(row.total) : 0,
       status: row.status as any,
-      driverId: row.driverId || null,
-      createdAt: row.createdAt || new Date(),
-      deliveredAt: row.deliveredAt || null,
-      receiptImage: row.receiptImage || null,
+      driverId: row.driverId || undefined,
+      createdAt: row.createdAt
+        ? row.createdAt.toISOString()
+        : new Date().toISOString(),
+      deliveredAt: row.deliveredAt ? row.deliveredAt.toISOString() : undefined,
       paymentMethod: (row.paymentMethod as any) || null,
-      pointsUsed: row.pointsUsed || null,
-      pointsDiscount: row.pointsDiscount || null,
-      date: row.date || null,
+      pointsUsed: row.pointsUsed || undefined,
+      pointsDiscount: row.pointsDiscount || undefined,
+      date: row.date ? row.date.toISOString() : undefined,
       timestamp: row.timestamp || null,
       deliveryTimestamp: row.deliveryTimestamp || null,
+    };
+  }
+
+  private mapOrderItemToEntity(row: typeof orderItems.$inferSelect): OrderItem {
+    return {
+      id: row.id,
+      orderId: row.orderId,
+      productId: row.productId,
+      quantity: row.quantity,
+      price: parseFloat(row.price || "0"),
     };
   }
 }

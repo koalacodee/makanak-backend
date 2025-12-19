@@ -1,11 +1,14 @@
 import { Elysia } from "elysia";
 import { authModule } from "../infrastructure/auth.module";
+import { authGuard } from "./auth.guard";
 import {
   LoginDto,
   LoginResponseDto,
   RefreshTokenDto,
   RefreshTokenResponseDto,
+  MeResponseDto,
 } from "./auth.dto";
+import { UnauthorizedError } from "@/shared/presentation";
 
 export const authController = new Elysia({ prefix: "/auth" })
   .use(authModule)
@@ -103,5 +106,34 @@ export const authController = new Elysia({ prefix: "/auth" })
     {
       cookie: RefreshTokenDto,
       response: RefreshTokenResponseDto,
+    }
+  )
+  .use(authGuard()) // Protect /me endpoint
+  .get(
+    "/me",
+    async ({ accessJwt, getMeUC, userRepo, headers }) => {
+      const payload = await accessJwt.verify(
+        headers.authorization?.substring(7)
+      );
+      if (!payload || typeof payload !== "object" || !("sub" in payload)) {
+        throw new UnauthorizedError([
+          {
+            path: "authorization",
+            message: "Invalid token",
+          },
+        ]);
+      }
+      const me = await getMeUC.execute(payload.sub as string, userRepo);
+      return {
+        id: me.id,
+        username: me.username,
+        role: me.role as "admin" | "driver" | "cs" | "inventory",
+        createdAt: me.createdAt ?? undefined,
+        updatedAt: me.updatedAt ?? undefined,
+        lastLoginAt: me.lastLoginAt ?? undefined,
+      };
+    },
+    {
+      response: MeResponseDto,
     }
   );

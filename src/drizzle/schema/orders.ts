@@ -14,6 +14,7 @@ export const orders = pgTable(
   {
     id: uuid("id").primaryKey(),
     customerName: varchar("customer_name", { length: 255 }).notNull(),
+    referenceCode: varchar("reference_code", { length: 255 }),
     phone: varchar("phone", { length: 20 }).notNull(),
     address: varchar("address", { length: 500 }).notNull(),
     subtotal: decimal("subtotal", { precision: 10, scale: 2 }),
@@ -33,9 +34,8 @@ export const orders = pgTable(
     driverId: uuid("driver_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     deliveredAt: timestamp("delivered_at"),
-    receiptImage: varchar("receipt_image", { length: 1000 }),
     paymentMethod: varchar("payment_method", { length: 20 }).$type<
-      "cod" | "online" | "wallet"
+      "cod" | "online"
     >(),
     pointsUsed: integer("points_used").default(0),
     pointsDiscount: decimal("points_discount", {

@@ -31,6 +31,16 @@ export interface Promo {
   buttonText?: string;
 }
 
+export interface PromoInput {
+  isActive?: boolean;
+  imageFilename?: string;
+  topBadge?: string;
+  title?: string;
+  description?: string;
+  code?: string;
+  buttonText?: string;
+}
+
 export interface Hero {
   badge?: string;
   titleLine1?: string;
@@ -85,7 +95,7 @@ export interface Content {
 export interface StoreSettings {
   id: string;
   pointsSystem: PointsSystem | null;
-  deliveryFee: string | null;
+  deliveryFee: number | null;
   announcement: Announcement | null;
   socialMedia: SocialMedia | null;
   paymentInfo: PaymentInfo | null;
@@ -101,6 +111,6 @@ export interface StoreSettingsInput {
   announcement?: Announcement;
   socialMedia?: SocialMedia;
   paymentInfo?: PaymentInfo;
-  promo?: Promo;
+  promo?: PromoInput;
   content?: Content;
 }

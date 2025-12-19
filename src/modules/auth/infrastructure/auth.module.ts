@@ -6,6 +6,7 @@ import { RefreshTokenRepository } from "./refreshToken.repository";
 import { LoginUseCase } from "../application/login.use-case";
 import { LogoutUseCase } from "../application/logout.use-case";
 import { RefreshTokenUseCase } from "../application/refresh-token.use-case";
+import { GetMeUseCase } from "../application/get-me.use-case";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 
@@ -28,4 +29,5 @@ export const authModule = new Elysia({ name: "authModule" })
   .decorate("refreshTokenRepo", new RefreshTokenRepository(db))
   .decorate("loginUC", new LoginUseCase())
   .decorate("logoutUC", new LogoutUseCase())
-  .decorate("refreshTokenUC", new RefreshTokenUseCase());
+  .decorate("refreshTokenUC", new RefreshTokenUseCase())
+  .decorate("getMeUC", new GetMeUseCase());

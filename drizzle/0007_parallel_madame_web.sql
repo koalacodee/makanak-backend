@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "reference_code" varchar(255);

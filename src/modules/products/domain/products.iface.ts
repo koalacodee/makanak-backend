@@ -8,7 +8,11 @@ export interface IProductRepository {
     limit?: number;
   }): Promise<{ data: Product[]; total: number }>;
   findById(id: string): Promise<Product | null>;
+  findByIds(ids: string[]): Promise<Product[]>;
   create(data: Omit<Product, "id">): Promise<Product>;
   update(id: string, data: Partial<Omit<Product, "id">>): Promise<Product>;
   delete(id: string): Promise<void>;
+  existsByIds(ids: string[]): Promise<boolean>;
+  updateStock(id: string, delta: number): Promise<void>;
+  updateStockMany(items: { id: string; delta: number }[]): Promise<void>;
 }

@@ -65,10 +65,7 @@ export class FileHub {
     return this._instance;
   }
 
-  async generateUploadToken(options: {
-    expiresInMs: number;
-    targetId?: string;
-  }): Promise<Upload> {
+  async generateUploadToken(options: { expiresInMs: number }): Promise<Upload> {
     if (!this.apiKey) {
       throw new Error("FileHub API key is not set");
     }
@@ -176,7 +173,16 @@ export class FileHub {
         },
       }
     );
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(error);
+      throw new Error(
+        `FileHub signed upload URL request failed: ${response.status} ${response.statusText}`
+      );
+    }
     const data = await response.json();
     return data;
   }
 }
+
+export default FileHub.instance();

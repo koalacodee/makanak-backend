@@ -12,10 +12,11 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
   .use(categoriesModule)
   .get(
     "/",
-    async ({ query, getCategoriesUC, categoryRepo }) => {
+    async ({ query, getCategoriesUC, categoryRepo, attachmentRepo }) => {
       const categories = await getCategoriesUC.execute(
         query.includeHidden ?? false,
-        categoryRepo
+        categoryRepo,
+        attachmentRepo
       );
       return categories;
     },
@@ -41,23 +42,25 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
   .post(
     "/",
     async ({ body, createCategoryUC, categoryRepo }) => {
-      const category = await createCategoryUC.execute(
+      const result = await createCategoryUC.execute(
         {
-          id: body.id,
           name: body.name,
           icon: body.icon,
           color: body.color,
-          image: body.image,
           isHidden: body.isHidden ?? false,
           isLocked: body.isLocked ?? false,
         },
-        categoryRepo
+        categoryRepo,
+        body.attachWithFileExtension ?? undefined
       );
-      return category;
+      return result;
     },
     {
       body: CategoryInputDto,
-      response: CategoryDto,
+      response: t.Object({
+        category: CategoryDto,
+        uploadUrl: t.Optional(t.String()),
+      }),
     }
   )
   .put(
@@ -67,7 +70,6 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
       if (body.name !== undefined) updateData.name = body.name;
       if (body.icon !== undefined) updateData.icon = body.icon;
       if (body.color !== undefined) updateData.color = body.color;
-      if (body.image !== undefined) updateData.image = body.image;
       if (body.isHidden !== undefined) updateData.isHidden = body.isHidden;
       if (body.isLocked !== undefined) updateData.isLocked = body.isLocked;
 

@@ -1,6 +1,8 @@
 import type { IProductRepository } from "../domain/products.iface";
 import type { Product } from "../domain/product.entity";
 import { ValidationError } from "../../../shared/presentation/errors";
+import { IAttachmentRepository } from "@/shared/attachments";
+import filehub from "@/shared/filehub";
 
 export class GetProductsUseCase {
   async execute(
@@ -10,9 +12,10 @@ export class GetProductsUseCase {
       page?: number;
       limit?: number;
     },
-    repo: IProductRepository
+    repo: IProductRepository,
+    attachmentRepo: IAttachmentRepository
   ): Promise<{
-    data: Product[];
+    data: (Product & { image: string | undefined })[];
     pagination: {
       page: number;
       limit: number;
@@ -48,10 +51,33 @@ export class GetProductsUseCase {
       limit,
     });
 
+    const attachments = await attachmentRepo.findByTargetIds(
+      result.data.map((product) => product.id)
+    );
+
+    const signedUrls =
+      attachments.length > 0
+        ? await filehub.getSignedUrlBatch(
+            attachments.map((attachment) => attachment.filename)
+          )
+        : [];
+
+    const data = result.data.map((product) => {
+      const attachment = attachments.find(
+        (attachment) => attachment.targetId === product.id
+      );
+      const signedUrl = signedUrls.find(
+        (signedUrl) => signedUrl.filename === attachment?.filename
+      );
+      return {
+        ...product,
+        image: signedUrl?.signedUrl || undefined,
+      };
+    });
     const totalPages = Math.ceil(result.total / limit);
 
     return {
-      data: result.data,
+      data,
       pagination: {
         page,
         limit,

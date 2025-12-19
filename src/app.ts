@@ -11,8 +11,26 @@ import { customersController } from "./modules/customers";
 import { cartController } from "./modules/cart";
 import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
 import openapi from "@elysiajs/openapi";
+import cors from "@elysiajs/cors";
+
+// CORS configuration
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim())
+  : ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"];
 
 export const app = new Elysia()
+  .use(
+    cors({
+      credentials: true,
+      origin: (request) => {
+        const origin = request.headers.get("origin");
+        if (!origin) return false;
+        return allowedOrigins.includes(origin) || allowedOrigins.includes("*");
+      },
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  )
   .use(errorHandler)
   .get("/", () => ({
     name: "Makanak API",

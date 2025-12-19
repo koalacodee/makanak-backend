@@ -56,7 +56,16 @@ DATABASE_URL=postgresql://user:password@localhost:5432/makanak
 JWT_SECRET=your-secret-key-change-in-production
 PORT=3001
 HOST=0.0.0.0
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
 ```
+
+**Environment Variables:**
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Secret key for JWT token signing
+- `PORT` - Server port (default: 3001)
+- `HOST` - Server hostname (default: 0.0.0.0)
+- `CORS_ORIGINS` - Comma-separated list of allowed CORS origins (default: localhost ports 3000, 5173, 5174)
 
 4. Run database migrations:
 

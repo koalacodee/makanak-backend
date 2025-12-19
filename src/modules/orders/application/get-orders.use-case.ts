@@ -1,6 +1,8 @@
 import type { IOrderRepository } from "../domain/orders.iface";
 import type { Order, OrderStatus } from "../domain/order.entity";
 import { ValidationError } from "../../../shared/presentation/errors";
+import { IAttachmentRepository } from "@/shared/attachments/domain/attachments.iface";
+import filehub from "@/shared/filehub";
 
 export class GetOrdersUseCase {
   async execute(
@@ -10,7 +12,8 @@ export class GetOrdersUseCase {
       page?: number;
       limit?: number;
     },
-    repo: IOrderRepository
+    repo: IOrderRepository,
+    attachmentRepo: IAttachmentRepository
   ): Promise<{
     data: Order[];
     pagination: {
@@ -48,10 +51,33 @@ export class GetOrdersUseCase {
       limit,
     });
 
+    const attachments = await attachmentRepo.findByTargetIds(
+      result.data.map((order) => order.id)
+    );
+
+    const signedUrls =
+      attachments.length > 0
+        ? await filehub.getSignedUrlBatch(
+            attachments.map((attachment) => attachment.filename),
+            1000 * 60 * 60 * 24 * 6 // 6 days
+          )
+        : [];
+
     const totalPages = Math.ceil(result.total / limit);
 
     return {
-      data: result.data,
+      data: result.data.map((order) => {
+        const attachment = attachments.find(
+          (attachment) => attachment.targetId === order.id
+        );
+        const signedUrl = signedUrls.find(
+          (signedUrl) => signedUrl.filename === attachment?.filename
+        );
+        return {
+          ...order,
+          receiptImage: signedUrl?.signedUrl,
+        };
+      }),
       pagination: {
         page,
         limit,

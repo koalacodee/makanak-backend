@@ -5,17 +5,16 @@ export const CategoryDto = t.Object({
   name: t.String(),
   icon: t.String(),
   color: t.String(),
-  image: t.String({ format: "uri" }),
   isHidden: t.Boolean(),
   isLocked: t.Boolean(),
+  image: t.Optional(t.String()),
 });
 
 export const CategoryInputDto = t.Object({
-  id: t.String({ format: "uuid" }),
+  attachWithFileExtension: t.Optional(t.String()),
   name: t.String(),
   icon: t.String(),
   color: t.String(),
-  image: t.String({ format: "uri" }),
   isHidden: t.Optional(t.Boolean()),
   isLocked: t.Optional(t.Boolean()),
 });

@@ -4,32 +4,33 @@ import { ordersModule } from "../infrastructure/orders.module";
 import {
   OrderDto,
   OrderInputDto,
-  OrderUpdateDto,
   OrderQueryDto,
   OrdersResponseDto,
+  AssignOrderToDriverDto,
+  ChangeOrderStatusDto,
 } from "./orders.dto";
 import { authGuard } from "../../auth/presentation/auth.guard";
-import { FileHub } from "@/shared/filehub";
-import redis from "@/shared/redis";
 
 export const ordersController = new Elysia({ prefix: "/orders" })
   .use(ordersModule)
   // Public routes - must come before auth guard
   .get(
     "/:id",
-    async ({ params, getOrderUC, orderRepo }) => {
-      const order = await getOrderUC.execute(params.id, orderRepo);
+    async ({ params, getOrderUC, orderRepo, attachmentRepo }) => {
+      const order = await getOrderUC.execute(
+        params.id,
+        orderRepo,
+        attachmentRepo
+      );
       return {
         ...order,
-        items: order.items.map((item) => ({
+        items: order.orderItems.map((item) => ({
           ...item,
-          originalPrice: item.originalPrice ?? undefined,
+          originalPrice: item.price ?? undefined,
         })),
-        subtotal: order.subtotal ? parseFloat(order.subtotal) : undefined,
-        deliveryFee: order.deliveryFee
-          ? parseFloat(order.deliveryFee)
-          : undefined,
-        total: parseFloat(order.total),
+        subtotal: order.subtotal ?? undefined,
+        deliveryFee: order.deliveryFee ? order.deliveryFee : undefined,
+        total: order.total,
         pointsDiscount: order.pointsDiscount
           ? parseFloat(order.pointsDiscount)
           : undefined,
@@ -37,9 +38,10 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         receiptImage: order.receiptImage ?? undefined,
         paymentMethod: order.paymentMethod ?? undefined,
         pointsUsed: order.pointsUsed ?? undefined,
-        createdAt: order.createdAt.toISOString(),
-        deliveredAt: order.deliveredAt?.toISOString() ?? undefined,
-        date: order.date?.toISOString() ?? undefined,
+        createdAt: order.createdAt,
+        deliveredAt: order.deliveredAt ?? undefined,
+        referenceCode: order.referenceCode ?? undefined,
+        date: order.date ?? undefined,
         timestamp: order.timestamp ?? undefined,
         deliveryTimestamp: order.deliveryTimestamp ?? undefined,
       };
@@ -67,73 +69,31 @@ export const ordersController = new Elysia({ prefix: "/orders" })
           phone: body.phone,
           address: body.address,
           items: body.items,
-          subtotal: body.subtotal,
-          deliveryFee: body.deliveryFee,
           paymentMethod: body.paymentMethod,
-          pointsUsed: body.pointsUsed,
-          pointsDiscount: body.pointsDiscount,
+          pointsToUse: body.pointsToUse,
+          attachWithFileExtension: body.attachWithFileExtension,
         },
         orderRepo,
         productRepo,
-        customerRepo
+        customerRepo,
+        settingsRepo
       );
 
-      // Handle file upload flow if attach=true
-      let uploadKey: string | undefined;
-      if (body.attach === true) {
-        try {
-          const fileHub = FileHub.instance();
-          const upload = await fileHub.generateUploadToken({
-            expiresInMs: 3600000, // 1 hour
-            targetId: order.id,
-          });
-
-          // Store mapping in Redis for webhook handler
-          await redis.set(`filehub:${upload.uploadKey}`, order.id, "EX", 3600); // 1 hour expiry
-
-          uploadKey = upload.uploadKey;
-        } catch (error) {
-          // Log error but don't fail the order creation
-          console.error("Failed to generate upload token:", error);
-        }
-      }
-
-      return {
-        ...order,
-        items: order.items.map((item) => ({
-          ...item,
-          originalPrice: item.originalPrice ?? undefined,
-        })),
-        subtotal: order.subtotal ? parseFloat(order.subtotal) : undefined,
-        deliveryFee: order.deliveryFee
-          ? parseFloat(order.deliveryFee)
-          : undefined,
-        total: parseFloat(order.total),
-        pointsDiscount: order.pointsDiscount
-          ? parseFloat(order.pointsDiscount)
-          : undefined,
-        driverId: order.driverId ?? undefined,
-        receiptImage: order.receiptImage ?? undefined,
-        paymentMethod: order.paymentMethod ?? undefined,
-        pointsUsed: order.pointsUsed ?? undefined,
-        createdAt: order.createdAt.toISOString(),
-        deliveredAt: order.deliveredAt?.toISOString() ?? undefined,
-        date: order.date?.toISOString() ?? undefined,
-        timestamp: order.timestamp ?? undefined,
-        deliveryTimestamp: order.deliveryTimestamp ?? undefined,
-        uploadKey,
-      };
+      return order;
     },
     {
       body: OrderInputDto,
-      response: OrderDto,
+      response: t.Object({
+        order: OrderDto,
+        receiptUploadUrl: t.Optional(t.String()),
+      }),
     }
   )
   // Protected routes - require authentication
   .use(authGuard(["admin", "driver", "cs"]))
   .get(
     "/",
-    async ({ query, getOrdersUC, orderRepo }) => {
+    async ({ query, getOrdersUC, orderRepo, attachmentRepo }) => {
       const result = await getOrdersUC.execute(
         {
           status: query.status,
@@ -141,61 +101,85 @@ export const ordersController = new Elysia({ prefix: "/orders" })
           page: query.page,
           limit: query.limit,
         },
-        orderRepo
+        orderRepo,
+        attachmentRepo
       );
-      return {
+      const toReturn = {
         data: result.data.map((order) => ({
           ...order,
-          items: order.items.map((item) => ({
+          items: order.orderItems.map((item) => ({
             ...item,
-            originalPrice: item.originalPrice ?? undefined,
+            originalPrice: item.price ?? undefined,
           })),
-          subtotal: order.subtotal ? parseFloat(order.subtotal) : undefined,
-          deliveryFee: order.deliveryFee
-            ? parseFloat(order.deliveryFee)
-            : undefined,
-          total: parseFloat(order.total),
-          pointsDiscount: order.pointsDiscount
-            ? parseFloat(order.pointsDiscount)
-            : undefined,
+          subtotal: order.subtotal ?? undefined,
+          deliveryFee: order.deliveryFee ?? undefined,
+          total: order.total,
           driverId: order.driverId ?? undefined,
-          receiptImage: order.receiptImage ?? undefined,
-          paymentMethod: order.paymentMethod ?? undefined,
-          pointsUsed: order.pointsUsed ?? undefined,
-          createdAt: order.createdAt.toISOString(),
-          deliveredAt: order.deliveredAt?.toISOString() ?? undefined,
-          date: order.date?.toISOString() ?? undefined,
-          timestamp: order.timestamp ?? undefined,
-          deliveryTimestamp: order.deliveryTimestamp ?? undefined,
+          createdAt: order.createdAt,
+          referenceCode: order.referenceCode ?? undefined,
+          deliveredAt: order.deliveredAt ?? undefined,
+          date: order.date ?? undefined,
         })),
         pagination: result.pagination,
       };
+      console.log(toReturn);
+      return toReturn;
     },
     {
       query: OrderQueryDto,
       response: OrdersResponseDto,
     }
   )
-  .patch(
-    "/:id",
+  .post(
+    "/:id/assign-driver",
     async ({
       params,
       body,
-      updateOrderUC,
+      assignOrderToDriverUC,
+      orderRepo,
+      staffMemberRepo,
+    }) => {
+      const order = await assignOrderToDriverUC.execute(
+        params.id,
+        body.driverId,
+        orderRepo,
+        staffMemberRepo
+      );
+      return {
+        ...order,
+        items: order.orderItems.map((item) => ({
+          ...item,
+          originalPrice: item.price ?? undefined,
+        })),
+        subtotal: order.subtotal ?? undefined,
+        deliveryFee: order.deliveryFee ?? undefined,
+        total: order.total,
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ format: "uuid" }),
+      }),
+      body: AssignOrderToDriverDto,
+      response: OrderDto,
+    }
+  )
+  .patch(
+    "/:id/status",
+    async ({
+      params,
+      body,
+      changeOrderStatusUC,
       orderRepo,
       customerRepo,
       settingsRepo,
       productRepo,
     }) => {
-      const updateData: any = {};
-      if (body.status !== undefined) updateData.status = body.status;
-      if (body.driverId !== undefined) updateData.driverId = body.driverId;
-      if (body.receiptImage !== undefined)
-        updateData.receiptImage = body.receiptImage;
-
-      const order = await updateOrderUC.execute(
-        params.id,
-        updateData,
+      const order = await changeOrderStatusUC.execute(
+        {
+          id: params.id,
+          status: body.status,
+        },
         orderRepo,
         customerRepo,
         settingsRepo,
@@ -203,34 +187,24 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       );
       return {
         ...order,
-        items: order.items.map((item) => ({
+        items: order.orderItems.map((item) => ({
           ...item,
-          originalPrice: item.originalPrice ?? undefined,
+          originalPrice: item.price ?? undefined,
         })),
-        subtotal: order.subtotal ? parseFloat(order.subtotal) : undefined,
-        deliveryFee: order.deliveryFee
-          ? parseFloat(order.deliveryFee)
-          : undefined,
-        total: parseFloat(order.total),
-        pointsDiscount: order.pointsDiscount
-          ? parseFloat(order.pointsDiscount)
-          : undefined,
+        subtotal: order.subtotal ?? undefined,
+        deliveryFee: order.deliveryFee ?? undefined,
+        total: order.total,
         driverId: order.driverId ?? undefined,
-        receiptImage: order.receiptImage ?? undefined,
-        paymentMethod: order.paymentMethod ?? undefined,
-        pointsUsed: order.pointsUsed ?? undefined,
-        createdAt: order.createdAt.toISOString(),
-        deliveredAt: order.deliveredAt?.toISOString() ?? undefined,
-        date: order.date?.toISOString() ?? undefined,
-        timestamp: order.timestamp ?? undefined,
-        deliveryTimestamp: order.deliveryTimestamp ?? undefined,
+        createdAt: order.createdAt,
+        deliveredAt: order.deliveredAt ?? undefined,
+        date: order.date ?? undefined,
       };
     },
     {
       params: t.Object({
         id: t.String({ format: "uuid" }),
       }),
-      body: OrderUpdateDto,
+      body: ChangeOrderStatusDto,
       response: OrderDto,
     }
   );

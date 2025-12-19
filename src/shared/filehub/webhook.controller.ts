@@ -6,7 +6,7 @@ import { attachments } from "@/drizzle/schema";
 export const fileHubWebHookController = new Elysia({
   prefix: "/filehub/webhook",
 }).post(
-  "/",
+  "/uploaded",
   async ({ body }) => {
     if (body.event === "upload_completed") {
       const targetId = await redis.get(`filehub:${body.objectPath}`);

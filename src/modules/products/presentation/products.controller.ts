@@ -12,14 +12,18 @@ export const productsController = new Elysia({ prefix: "/products" })
   .use(productsModule)
   .get(
     "/",
-    async ({ query, getProductsUC, productRepo }) => {
+    async ({ query, getProductsUC, productRepo, attachmentRepo }) => {
       const filters = {
         category: query.category,
         inStock: query.inStock,
         page: query.page,
         limit: query.limit,
       };
-      const result = await getProductsUC.execute(filters, productRepo);
+      const result = await getProductsUC.execute(
+        filters,
+        productRepo,
+        attachmentRepo
+      );
       return {
         data: result.data.map((p) => ({
           ...p,
@@ -38,8 +42,12 @@ export const productsController = new Elysia({ prefix: "/products" })
   )
   .get(
     "/:id",
-    async ({ params, getProductUC, productRepo }) => {
-      const product = await getProductUC.execute(params.id, productRepo);
+    async ({ params, getProductUC, productRepo, attachmentRepo }) => {
+      const product = await getProductUC.execute(
+        params.id,
+        productRepo,
+        attachmentRepo
+      );
       return {
         ...product,
         price: parseFloat(product.price),
@@ -64,24 +72,30 @@ export const productsController = new Elysia({ prefix: "/products" })
           price: body.price.toString(),
           unit: body.unit,
           category: body.category,
-          image: body.image,
           description: body.description,
           stock: body.stock,
           originalPrice: body.originalPrice?.toString(),
         },
-        productRepo
+        productRepo,
+        body.attachWithFileExtension ?? undefined
       );
       return {
-        ...product,
-        price: parseFloat(product.price),
-        originalPrice: product.originalPrice
-          ? parseFloat(product.originalPrice)
-          : undefined,
+        product: {
+          ...product.product,
+          price: parseFloat(product.product.price),
+          originalPrice: product.product.originalPrice
+            ? parseFloat(product.product.originalPrice)
+            : undefined,
+        },
+        uploadUrl: product.uploadUrl,
       };
     },
     {
       body: ProductInputDto,
-      response: ProductDto,
+      response: t.Object({
+        product: ProductDto,
+        uploadUrl: t.Optional(t.String()),
+      }),
     }
   )
   .put(
@@ -92,7 +106,6 @@ export const productsController = new Elysia({ prefix: "/products" })
       if (body.price !== undefined) updateData.price = body.price.toString();
       if (body.unit !== undefined) updateData.unit = body.unit;
       if (body.category !== undefined) updateData.category = body.category;
-      if (body.image !== undefined) updateData.image = body.image;
       if (body.description !== undefined)
         updateData.description = body.description;
       if (body.stock !== undefined) updateData.stock = body.stock;

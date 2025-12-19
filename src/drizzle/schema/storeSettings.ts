@@ -26,7 +26,7 @@ export const storeSettings = pgTable("store_settings", {
   }>(),
   promo: jsonb("promo").$type<{
     isActive: boolean;
-    image?: string;
+    imageFilename?: string;
     topBadge?: string;
     title?: string;
     description?: string;

@@ -20,13 +20,12 @@ The Categories module manages product categories with support for icons, colors,
 
 ```typescript
 interface Category {
-  id: string;              // UUID
-  name: string;            // Category name (Arabic)
-  icon: string;            // Icon identifier
-  color: string;           // Tailwind CSS color classes
-  image: string;           // Category image URL
-  isHidden: boolean;       // Hide from customers
-  isLocked: boolean;       // Coming soon status
+  id: string; // UUID
+  name: string; // Category name (Arabic)
+  icon: string; // Icon identifier
+  color: string; // Tailwind CSS color classes
+  isHidden: boolean; // Hide from customers
+  isLocked: boolean; // Coming soon status
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,9 +38,11 @@ interface Category {
 Get all categories.
 
 **Query Parameters:**
+
 - `includeHidden` (boolean, default: false) - Include hidden categories
 
 **Response:**
+
 ```json
 [
   {
@@ -69,6 +70,7 @@ Create a new category.
 **Headers:** `Authorization: Bearer <token>` (admin)
 
 **Request:**
+
 ```json
 {
   "name": "خضروات",
@@ -105,6 +107,7 @@ Delete a category.
 ### GetCategoriesUseCase
 
 Retrieves category list:
+
 - Filters hidden categories by default
 - Includes hidden categories if requested
 - Returns all categories sorted by creation date
@@ -112,12 +115,14 @@ Retrieves category list:
 ### GetCategoryUseCase
 
 Retrieves single category:
+
 - Validates category ID
 - Returns 404 if not found
 
 ### CreateCategoryUseCase
 
 Creates new category:
+
 - Validates required fields
 - Sets default values for optional fields
 - Generates UUID for category ID
@@ -125,6 +130,7 @@ Creates new category:
 ### UpdateCategoryUseCase
 
 Updates existing category:
+
 - Validates category exists
 - Updates only provided fields
 - Maintains existing values for omitted fields
@@ -132,6 +138,7 @@ Updates existing category:
 ### DeleteCategoryUseCase
 
 Deletes category:
+
 - Validates category exists
 - Removes category from database
 - Note: Products referencing this category may need handling
@@ -147,12 +154,13 @@ Deletes category:
 ## Testing
 
 Run tests:
+
 ```bash
 bun test src/modules/categories
 ```
 
 Test coverage includes:
+
 - Category CRUD operations
 - Hidden category filtering
 - Error handling (404, validation)
-

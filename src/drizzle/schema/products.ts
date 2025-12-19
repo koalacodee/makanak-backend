@@ -15,7 +15,6 @@ export const products = pgTable(
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
     unit: varchar("unit", { length: 50 }).notNull(),
     categoryId: uuid("category_id").notNull(),
-    image: varchar("image", { length: 500 }).notNull(),
     description: varchar("description", { length: 1000 }).notNull(),
     stock: integer("stock").notNull().default(0),
     originalPrice: decimal("original_price", { precision: 10, scale: 2 }),

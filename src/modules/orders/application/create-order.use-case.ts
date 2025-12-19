@@ -3,7 +3,10 @@ import type { IProductRepository } from "../../products/domain/products.iface";
 import type { ICustomerRepository } from "../../customers/domain/customers.iface";
 import type { Order, PaymentMethod } from "../domain/order.entity";
 import { BadRequestError } from "../../../shared/presentation/errors";
-
+import { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import filehub, { SignedPutUrl } from "@/shared/filehub";
+import redis from "@/shared/redis";
+import crypto from "crypto";
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -11,16 +14,15 @@ export class CreateOrderUseCase {
       phone: string;
       address: string;
       items: Array<{ id: string; quantity: number }>;
-      subtotal?: number;
-      deliveryFee?: number;
       paymentMethod: PaymentMethod;
-      pointsUsed?: number;
-      pointsDiscount?: number;
+      pointsToUse?: number;
+      attachWithFileExtension?: string;
     },
     orderRepo: IOrderRepository,
     productRepo: IProductRepository,
-    customerRepo: ICustomerRepository
-  ): Promise<Order> {
+    customerRepo: ICustomerRepository,
+    settingsRepo: ISettingsRepository
+  ): Promise<{ order: Order; receiptUploadUrl?: string }> {
     // Validate items
     if (!data.items || data.items.length === 0) {
       throw new BadRequestError([
@@ -43,18 +45,25 @@ export class CreateOrderUseCase {
       }
     }
 
-    // Validate stock availability and decrement stock
-    for (const item of data.items) {
-      const product = await productRepo.findById(item.id);
-      if (!product) {
-        throw new BadRequestError([
-          {
-            path: "items",
-            message: `Product ${item.id} not found`,
-          },
-        ]);
-      }
+    const products = await productRepo.findByIds(
+      data.items.map((item) => item.id)
+    );
 
+    if (products.length !== data.items.length) {
+      throw new BadRequestError([
+        {
+          path: "items",
+          message: "Some products not found",
+        },
+      ]);
+    }
+    let subtotal = 0;
+
+    products.forEach((product) => {
+      const item = data.items.find((item) => item.id === product.id) as {
+        id: string;
+        quantity: number;
+      };
       if (product.stock < item.quantity) {
         throw new BadRequestError([
           {
@@ -63,30 +72,28 @@ export class CreateOrderUseCase {
           },
         ]);
       }
+      subtotal += product.price * item.quantity;
+    });
 
-      // Decrement stock
-      await productRepo.update(item.id, {
-        stock: product.stock - item.quantity,
-      });
-    }
+    const settings = await settingsRepo.find();
 
     // Calculate total if not provided
-    const subtotal = data.subtotal || 0;
-    const deliveryFee = data.deliveryFee || 0;
-    const pointsDiscount = data.pointsDiscount || 0;
-    const pointsUsed = data.pointsUsed || 0;
+    const deliveryFee = settings?.deliveryFee || 0;
+    const discount = data.pointsToUse
+      ? (settings?.pointsSystem?.redemptionValue || 0) * data.pointsToUse
+      : 0;
 
     // Create or update customer
-    const existingCustomer = await customerRepo.findByPhone(data.phone);
+    let existingCustomer = await customerRepo.findByPhone(data.phone);
     if (existingCustomer) {
       // Update customer info (name, address) if provided
-      await customerRepo.update(data.phone, {
+      existingCustomer = await customerRepo.update(data.phone, {
         name: data.customerName,
         address: data.address,
       });
     } else {
       // Create new customer
-      await customerRepo.create({
+      existingCustomer = await customerRepo.create({
         phone: data.phone,
         name: data.customerName,
         address: data.address,
@@ -96,36 +103,24 @@ export class CreateOrderUseCase {
       });
     }
 
-    // Validate and deduct points if used
-    if (pointsUsed > 0) {
-      const customer = await customerRepo.findByPhone(data.phone);
-      if (!customer) {
-        throw new BadRequestError([
-          {
-            path: "phone",
-            message: "Customer not found",
-          },
-        ]);
-      }
-
-      if (customer.points < pointsUsed) {
-        throw new BadRequestError([
-          {
-            path: "pointsUsed",
-            message: `Insufficient points. Available: ${customer.points}, Required: ${pointsUsed}`,
-          },
-        ]);
-      }
-
-      // Deduct points immediately
-      await customerRepo.update(data.phone, {
-        pointsDelta: -pointsUsed,
-      });
+    if (data.pointsToUse && data.pointsToUse > existingCustomer.points) {
+      throw new BadRequestError([
+        {
+          path: "pointsToUse",
+          message:
+            "Insufficient points. You have " +
+            existingCustomer.points +
+            " points. You need " +
+            (data.pointsToUse - existingCustomer.points) +
+            " points",
+        },
+      ]);
     }
 
     // Create order
     const order = await orderRepo.create({
       customerName: data.customerName,
+      referenceCode: crypto.randomInt(10000000, 99999999).toString(),
       phone: data.phone,
       address: data.address,
       items: data.items.map((item) => ({
@@ -135,14 +130,36 @@ export class CreateOrderUseCase {
       subtotal: subtotal.toString(),
       deliveryFee: deliveryFee.toString(),
       paymentMethod: data.paymentMethod,
-      pointsUsed: data.pointsUsed || 0,
-      pointsDiscount: pointsDiscount.toString(),
+      pointsUsed: data.pointsToUse || 0,
+      pointsDiscount: discount.toString(),
     });
+
+    let receiptUploadUrl: SignedPutUrl | null = null;
+    if (data.paymentMethod == "online") {
+      if (!data.attachWithFileExtension) {
+        throw new BadRequestError([
+          {
+            path: "attachWithFileExtension",
+            message: "Attach with file extension is required",
+          },
+        ]);
+      }
+      receiptUploadUrl = await filehub.getSignedPutUrl(
+        3600 * 24 * 7,
+        data.attachWithFileExtension
+      );
+      await redis.set(
+        `filehub:${receiptUploadUrl.filename}`,
+        order.id,
+        "EX",
+        3600 * 24 * 7
+      );
+    }
 
     // Calculate and update points (only if order is completed/delivered)
     // Points are calculated when order status changes to "delivered"
     // This will be handled in UpdateOrderUseCase when status changes to "delivered"
 
-    return order;
+    return { order, receiptUploadUrl: receiptUploadUrl?.signedUrl };
   }
 }

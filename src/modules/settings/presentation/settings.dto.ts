@@ -25,7 +25,7 @@ export const PaymentInfoDto = t.Object({
 
 export const PromoDto = t.Object({
   isActive: t.Optional(t.Boolean()),
-  image: t.Optional(t.String({ format: "uri" })),
+  attachWithFileExtension: t.Optional(t.String()),
   topBadge: t.Optional(t.String()),
   title: t.Optional(t.String()),
   description: t.Optional(t.String()),

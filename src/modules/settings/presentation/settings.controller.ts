@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { settingsModule } from "../infrastructure/settings.module";
 import { StoreSettingsDto } from "./settings.dto";
 import { authGuard } from "../../auth/presentation/auth.guard";
+import { StoreSettingsInput } from "../domain/settings.entity";
 
 export const settingsController = new Elysia({ prefix: "/settings" })
   .use(settingsModule)
@@ -25,9 +26,7 @@ export const settingsController = new Elysia({ prefix: "/settings" })
 
       return {
         pointsSystem: settings.pointsSystem || {},
-        deliveryFee: settings.deliveryFee
-          ? parseFloat(settings.deliveryFee)
-          : 0,
+        deliveryFee: settings.deliveryFee ? settings.deliveryFee : 0,
         announcement: settings.announcement || {},
         socialMedia: settings.socialMedia || {},
         paymentInfo: settings.paymentInfo || {},
@@ -43,7 +42,7 @@ export const settingsController = new Elysia({ prefix: "/settings" })
   .put(
     "/",
     async ({ body, updateSettingsUC, settingsRepo }) => {
-      const updateData: any = {};
+      const updateData: StoreSettingsInput = {};
       if (body.pointsSystem !== undefined)
         updateData.pointsSystem = body.pointsSystem;
       if (body.deliveryFee !== undefined)
@@ -61,9 +60,7 @@ export const settingsController = new Elysia({ prefix: "/settings" })
 
       return {
         pointsSystem: settings.pointsSystem || {},
-        deliveryFee: settings.deliveryFee
-          ? parseFloat(settings.deliveryFee)
-          : 0,
+        deliveryFee: settings.deliveryFee ? settings.deliveryFee : 0,
         announcement: settings.announcement || {},
         socialMedia: settings.socialMedia || {},
         paymentInfo: settings.paymentInfo || {},

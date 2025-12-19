@@ -10,6 +10,7 @@ export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
   create(data: {
     customerName: string;
+    referenceCode?: string;
     phone: string;
     address: string;
     items: Array<{ productId: string; quantity: number }>;
@@ -24,7 +25,7 @@ export interface IOrderRepository {
     data: {
       status?: OrderStatus;
       driverId?: string;
-      receiptImage?: string;
+      deliveredAt?: Date;
     }
   ): Promise<Order>;
 }

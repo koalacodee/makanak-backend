@@ -1,14 +1,9 @@
-export interface CartItem {
-  id: string; // product id
-  name: string;
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
   price: number;
-  unit: string;
-  category: string;
-  image: string;
-  description: string;
-  stock: number;
-  originalPrice?: number | null;
-  quantity: number; // quantity in cart/order
 }
 
 export type OrderStatus =
@@ -19,27 +14,27 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
-export type PaymentMethod = "cod" | "online" | "wallet";
+export type PaymentMethod = "cod" | "online";
 
 export interface Order {
   id: string;
   customerName: string;
+  referenceCode?: string;
   phone: string;
   address: string;
-  items: CartItem[];
-  subtotal?: string | null; // decimal as string from DB
-  deliveryFee?: string | null; // decimal as string from DB
-  total: string; // decimal as string from DB
+  orderItems: OrderItem[];
+  subtotal?: number;
+  deliveryFee?: number;
+  total: number;
   status: OrderStatus;
-  driverId?: string | null;
-  createdAt: Date;
-  deliveredAt?: Date | null;
-  receiptImage?: string | null;
-  paymentMethod?: PaymentMethod | null;
-  pointsUsed?: number | null;
-  pointsDiscount?: string | null; // decimal as string from DB
+  driverId?: string;
+  createdAt: string;
+  deliveredAt?: string;
+  paymentMethod?: PaymentMethod;
+  pointsUsed?: number;
+  pointsDiscount?: string; // decimal as string from DB
   // Legacy fields
-  date?: Date | null;
+  date?: string;
   timestamp?: number | null;
   deliveryTimestamp?: number | null;
 }
