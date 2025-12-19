@@ -5,10 +5,30 @@ import {
   CustomerInputDto,
   CustomerUpdateDto,
   CustomerPointsInfoDto,
+  CustomersListDto,
 } from "./customers.dto";
 
 export const customersController = new Elysia({ prefix: "/customers" })
   .use(customersModule)
+  .get(
+    "/",
+    async ({ getCustomersUC, customerRepo }) => {
+      const customers = await getCustomersUC.execute(customerRepo);
+      return customers.map((customer) => ({
+        phone: customer.phone,
+        name: customer.name ?? undefined,
+        address: customer.address ?? undefined,
+        points: customer.points,
+        totalSpent: customer.totalSpent
+          ? parseFloat(customer.totalSpent)
+          : undefined,
+        totalOrders: customer.totalOrders ?? undefined,
+      }));
+    },
+    {
+      response: CustomersListDto,
+    }
+  )
   .get(
     "/:phone",
     async ({ params, getCustomerUC, customerRepo }) => {

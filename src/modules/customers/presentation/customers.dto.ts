@@ -32,6 +32,8 @@ export const CustomerPointsInfoDto = t.Object({
   totalOrders: t.Number(),
 });
 
+export const CustomersListDto = t.Array(CustomerDto);
+
 export type Customer = Static<typeof CustomerDto>;
 export type CustomerInput = Static<typeof CustomerInputDto>;
 export type CustomerUpdate = Static<typeof CustomerUpdateDto>;

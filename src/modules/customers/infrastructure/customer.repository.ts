@@ -122,6 +122,11 @@ export class CustomerRepository implements ICustomerRepository {
     };
   }
 
+  async findAll(): Promise<Customer[]> {
+    const rows = await this.database.select().from(customers);
+    return rows.map((row) => this.mapToEntity(row));
+  }
+
   private mapToEntity(row: typeof customers.$inferSelect): Customer {
     return {
       phone: row.phone,
