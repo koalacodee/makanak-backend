@@ -7,6 +7,7 @@ import { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
 import filehub, { SignedPutUrl } from "@/shared/filehub";
 import redis from "@/shared/redis";
 import crypto from "crypto";
+import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -17,11 +18,13 @@ export class CreateOrderUseCase {
       paymentMethod: PaymentMethod;
       pointsToUse?: number;
       attachWithFileExtension?: string;
+      password: string;
     },
     orderRepo: IOrderRepository,
     productRepo: IProductRepository,
-    customerRepo: ICustomerRepository,
-    settingsRepo: ISettingsRepository
+    upsertCustomerUC: UpsertCustomerUseCase,
+    settingsRepo: ISettingsRepository,
+    customerRepo: ICustomerRepository
   ): Promise<{ order: Order; receiptUploadUrl?: string }> {
     // Validate items
     if (!data.items || data.items.length === 0) {
@@ -83,35 +86,25 @@ export class CreateOrderUseCase {
       ? (settings?.pointsSystem?.redemptionValue || 0) * data.pointsToUse
       : 0;
 
-    // Create or update customer
-    let existingCustomer = await customerRepo.findByPhone(data.phone);
-    if (existingCustomer) {
-      // Update customer info (name, address) if provided
-      existingCustomer = await customerRepo.update(data.phone, {
-        name: data.customerName,
-        address: data.address,
-      });
-    } else {
-      // Create new customer
-      existingCustomer = await customerRepo.create({
+    const customer = await upsertCustomerUC.execute(
+      {
         phone: data.phone,
         name: data.customerName,
         address: data.address,
-        points: 0,
-        totalSpent: 0,
-        totalOrders: 0,
-      });
-    }
+        password: data.password,
+      },
+      customerRepo
+    );
 
-    if (data.pointsToUse && data.pointsToUse > existingCustomer.points) {
+    if (data.pointsToUse && data.pointsToUse > customer.points) {
       throw new BadRequestError([
         {
           path: "pointsToUse",
           message:
             "Insufficient points. You have " +
-            existingCustomer.points +
+            customer.points +
             " points. You need " +
-            (data.pointsToUse - existingCustomer.points) +
+            (data.pointsToUse - customer.points) +
             " points",
         },
       ]);

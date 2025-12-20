@@ -1,5 +1,6 @@
 export interface Customer {
   phone: string;
+  password: string;
   name?: string | null;
   address?: string | null;
   points: number;
@@ -11,11 +12,9 @@ export interface Customer {
 
 export interface CustomerInput {
   phone: string;
+  password: string;
   name?: string;
   address?: string;
-  points?: number;
-  totalSpent?: number;
-  totalOrders?: number;
 }
 
 export interface CustomerUpdateInput {

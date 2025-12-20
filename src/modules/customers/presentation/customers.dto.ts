@@ -9,13 +9,16 @@ export const CustomerDto = t.Object({
   totalOrders: t.Optional(t.Number()),
 });
 
+export const GetCustomerDto = t.Object({
+  phone: t.String(),
+  password: t.String(),
+});
+
 export const CustomerInputDto = t.Object({
   phone: t.Optional(t.String()), // Optional in body, will use path param
+  password: t.String(),
   name: t.Optional(t.String()),
   address: t.Optional(t.String()),
-  points: t.Optional(t.Number()),
-  totalSpent: t.Optional(t.Number()),
-  totalOrders: t.Optional(t.Number()),
 });
 
 export const CustomerUpdateDto = t.Object({

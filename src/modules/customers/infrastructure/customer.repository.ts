@@ -34,9 +34,10 @@ export class CustomerRepository implements ICustomerRepository {
         phone: data.phone,
         name: data.name || null,
         address: data.address || null,
-        points: data.points || 0,
-        totalSpent: data.totalSpent?.toString() || "0",
-        totalOrders: data.totalOrders || 0,
+        points: 0,
+        totalSpent: "0",
+        totalOrders: 0,
+        password: data.password,
       })
       .returning();
 
@@ -89,11 +90,6 @@ export class CustomerRepository implements ICustomerRepository {
 
       if (data.name !== undefined) updateData.name = data.name || null;
       if (data.address !== undefined) updateData.address = data.address || null;
-      if (data.points !== undefined) updateData.points = data.points;
-      if (data.totalSpent !== undefined)
-        updateData.totalSpent = data.totalSpent.toString();
-      if (data.totalOrders !== undefined)
-        updateData.totalOrders = data.totalOrders;
 
       const [result] = await this.database
         .update(customers)
@@ -130,6 +126,7 @@ export class CustomerRepository implements ICustomerRepository {
   private mapToEntity(row: typeof customers.$inferSelect): Customer {
     return {
       phone: row.phone,
+      password: row.password,
       name: row.name,
       address: row.address,
       points: row.points,

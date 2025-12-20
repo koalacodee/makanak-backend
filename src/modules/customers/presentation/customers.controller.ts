@@ -6,9 +6,12 @@ import {
   CustomerUpdateDto,
   CustomerPointsInfoDto,
   CustomersListDto,
+  GetCustomerDto,
 } from "./customers.dto";
+import { authGuard } from "@/modules/auth";
 
 export const customersController = new Elysia({ prefix: "/customers" })
+  .use(authGuard(["admin"]))
   .use(customersModule)
   .get(
     "/",
@@ -29,10 +32,10 @@ export const customersController = new Elysia({ prefix: "/customers" })
       response: CustomersListDto,
     }
   )
-  .get(
+  .post(
     "/:phone",
-    async ({ params, getCustomerUC, customerRepo }) => {
-      const customer = await getCustomerUC.execute(params.phone, customerRepo);
+    async ({ body, getCustomerUC, customerRepo }) => {
+      const customer = await getCustomerUC.execute(body, customerRepo);
       return {
         phone: customer.phone,
         name: customer.name ?? undefined,
@@ -45,9 +48,7 @@ export const customersController = new Elysia({ prefix: "/customers" })
       };
     },
     {
-      params: t.Object({
-        phone: t.String(),
-      }),
+      body: GetCustomerDto,
       response: CustomerDto,
     }
   )
@@ -55,14 +56,11 @@ export const customersController = new Elysia({ prefix: "/customers" })
     "/:phone",
     async ({ params, body, upsertCustomerUC, customerRepo }) => {
       const customer = await upsertCustomerUC.execute(
-        params.phone,
         {
           phone: params.phone,
           name: body.name,
           address: body.address,
-          points: body.points,
-          totalSpent: body.totalSpent,
-          totalOrders: body.totalOrders,
+          password: body.password,
         },
         customerRepo
       );
@@ -119,17 +117,15 @@ export const customersController = new Elysia({ prefix: "/customers" })
   )
   .get(
     "/:phone/points",
-    async ({ params, getCustomerPointsUC, customerRepo }) => {
+    async ({ body, getCustomerPointsUC, customerRepo }) => {
       const pointsInfo = await getCustomerPointsUC.execute(
-        params.phone,
+        { phone: body.phone, password: body.password },
         customerRepo
       );
       return pointsInfo;
     },
     {
-      params: t.Object({
-        phone: t.String(),
-      }),
+      body: GetCustomerDto,
       response: CustomerPointsInfoDto,
     }
   );

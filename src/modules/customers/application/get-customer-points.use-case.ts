@@ -1,20 +1,39 @@
 import type { ICustomerRepository } from "../domain/customers.iface";
 import type { CustomerPointsInfo } from "../domain/customer.entity";
-import { NotFoundError } from "../../../shared/presentation/errors";
+import {
+  NotFoundError,
+  UnauthorizedError,
+} from "../../../shared/presentation/errors";
 
 export class GetCustomerPointsUseCase {
   async execute(
-    phone: string,
+    data: { phone: string; password: string },
     repo: ICustomerRepository
   ): Promise<CustomerPointsInfo> {
-    const pointsInfo = await repo.getPointsInfo(phone);
+    const customer = await repo.findByPhone(data.phone);
 
-    if (!pointsInfo) {
+    if (!customer) {
       throw new NotFoundError([
         { path: "phone", message: "Customer not found" },
       ]);
     }
 
-    return pointsInfo;
+    const isPasswordValid = await Bun.password.verify(
+      data.password,
+      customer.password!,
+      "argon2id"
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedError([
+        { path: "password", message: "Invalid password" },
+      ]);
+    }
+
+    return {
+      points: customer.points,
+      totalSpent: customer.totalSpent ? parseFloat(customer.totalSpent) : 0,
+      totalOrders: customer.totalOrders || 0,
+      phone: customer.phone,
+    };
   }
 }
