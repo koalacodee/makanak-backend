@@ -27,7 +27,7 @@ export const app = new Elysia()
         if (!origin) return false;
         return allowedOrigins.includes(origin) || allowedOrigins.includes("*");
       },
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowedHeaders: ["Content-Type", "Authorization"],
     })
   )
