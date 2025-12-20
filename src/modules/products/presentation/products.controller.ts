@@ -27,10 +27,8 @@ export const productsController = new Elysia({ prefix: "/products" })
       return {
         data: result.data.map((p) => ({
           ...p,
-          price: parseFloat(p.price),
-          originalPrice: p.originalPrice
-            ? parseFloat(p.originalPrice)
-            : undefined,
+          price: p.price,
+          originalPrice: p.originalPrice ? p.originalPrice : undefined,
         })),
         pagination: result.pagination,
       };
@@ -50,9 +48,9 @@ export const productsController = new Elysia({ prefix: "/products" })
       );
       return {
         ...product,
-        price: parseFloat(product.price),
+        price: product.price,
         originalPrice: product.originalPrice
-          ? parseFloat(product.originalPrice)
+          ? product.originalPrice
           : undefined,
       };
     },
@@ -69,12 +67,12 @@ export const productsController = new Elysia({ prefix: "/products" })
       const product = await createProductUC.execute(
         {
           name: body.name,
-          price: body.price.toString(),
+          price: body.price,
           unit: body.unit,
           category: body.category,
           description: body.description,
           stock: body.stock,
-          originalPrice: body.originalPrice?.toString(),
+          originalPrice: body.originalPrice,
         },
         productRepo,
         body.attachWithFileExtension ?? undefined
@@ -82,9 +80,9 @@ export const productsController = new Elysia({ prefix: "/products" })
       return {
         product: {
           ...product.product,
-          price: parseFloat(product.product.price),
+          price: product.product.price,
           originalPrice: product.product.originalPrice
-            ? parseFloat(product.product.originalPrice)
+            ? product.product.originalPrice
             : undefined,
         },
         uploadUrl: product.uploadUrl,
@@ -119,9 +117,9 @@ export const productsController = new Elysia({ prefix: "/products" })
       );
       return {
         ...product,
-        price: parseFloat(product.price),
+        price: product.price,
         originalPrice: product.originalPrice
-          ? parseFloat(product.originalPrice)
+          ? product.originalPrice
           : undefined,
       };
     },
@@ -129,7 +127,7 @@ export const productsController = new Elysia({ prefix: "/products" })
       params: t.Object({
         id: t.String({ format: "uuid" }),
       }),
-      body: ProductInputDto,
+      body: t.Partial(ProductInputDto),
       response: ProductDto,
     }
   )

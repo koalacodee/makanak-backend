@@ -8,6 +8,7 @@ import {
   OrdersResponseDto,
   AssignOrderToDriverDto,
   ChangeOrderStatusDto,
+  Order,
 } from "./orders.dto";
 import { authGuard } from "../../auth/presentation/auth.guard";
 
@@ -62,6 +63,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       productRepo,
       customerRepo,
       settingsRepo,
+      upsertCustomerUC,
     }) => {
       const order = await createOrderUC.execute(
         {
@@ -72,14 +74,24 @@ export const ordersController = new Elysia({ prefix: "/orders" })
           paymentMethod: body.paymentMethod,
           pointsToUse: body.pointsToUse,
           attachWithFileExtension: body.attachWithFileExtension,
+          password: body.password,
         },
         orderRepo,
         productRepo,
-        customerRepo,
-        settingsRepo
+        upsertCustomerUC,
+        settingsRepo,
+        customerRepo
       );
 
-      return order;
+      return {
+        ...order,
+        order: {
+          ...order.order,
+          pointsDiscount: order.order.pointsDiscount
+            ? parseFloat(order.order.pointsDiscount)
+            : undefined,
+        },
+      };
     },
     {
       body: OrderInputDto,
@@ -119,6 +131,14 @@ export const ordersController = new Elysia({ prefix: "/orders" })
           referenceCode: order.referenceCode ?? undefined,
           deliveredAt: order.deliveredAt ?? undefined,
           date: order.date ?? undefined,
+          timestamp: order.timestamp ?? undefined,
+          deliveryTimestamp: order.deliveryTimestamp ?? undefined,
+          paymentMethod: order.paymentMethod ?? undefined,
+          pointsUsed: order.pointsUsed ?? undefined,
+          pointsDiscount: order.pointsDiscount
+            ? parseFloat(order.pointsDiscount)
+            : undefined,
+          status: order.status,
         })),
         pagination: result.pagination,
       };
@@ -147,13 +167,20 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       );
       return {
         ...order,
-        items: order.orderItems.map((item) => ({
-          ...item,
-          originalPrice: item.price ?? undefined,
-        })),
         subtotal: order.subtotal ?? undefined,
         deliveryFee: order.deliveryFee ?? undefined,
         total: order.total,
+        paymentMethod: order.paymentMethod ?? undefined,
+        pointsUsed: order.pointsUsed ?? undefined,
+        pointsDiscount: order.pointsDiscount
+          ? parseFloat(order.pointsDiscount)
+          : undefined,
+        status: order.status,
+        driverId: order.driverId ?? undefined,
+        createdAt: order.createdAt,
+        deliveredAt: order.deliveredAt ?? undefined,
+        date: order.date ?? undefined,
+        referenceCode: order.referenceCode ?? undefined,
       };
     },
     {
@@ -198,6 +225,10 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         createdAt: order.createdAt,
         deliveredAt: order.deliveredAt ?? undefined,
         date: order.date ?? undefined,
+        pointsDiscount: order.pointsDiscount
+          ? parseFloat(order.pointsDiscount)
+          : undefined,
+        status: order.status,
       };
     },
     {

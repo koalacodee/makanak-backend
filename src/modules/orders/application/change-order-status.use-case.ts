@@ -5,15 +5,6 @@ import { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
 import { IProductRepository } from "@/modules/products/domain/products.iface";
 import { BadRequestError, NotFoundError } from "@/shared/presentation";
 
-const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  pending: ["processing", "cancelled"],
-  processing: ["ready", "cancelled"],
-  ready: ["out_for_delivery", "cancelled"],
-  out_for_delivery: ["delivered"],
-  delivered: [], // Terminal state
-  cancelled: [], // Terminal state
-};
-
 export class ChangeOrderStatusUseCase {
   async execute(
     data: { id: string; status: OrderStatus },
@@ -30,23 +21,6 @@ export class ChangeOrderStatusUseCase {
 
     if (existing.status === data.status) {
       return existing;
-    }
-
-    // Validate status transition if status is being changed
-    if (data.status && data.status !== existing.status) {
-      const allowedTransitions = VALID_TRANSITIONS[existing.status];
-      if (!allowedTransitions.includes(data.status)) {
-        throw new BadRequestError([
-          {
-            path: "status",
-            message: `Invalid status transition from "${existing.status}" to "${
-              data.status
-            }". Allowed transitions: ${
-              allowedTransitions.join(", ") || "none"
-            }`,
-          },
-        ]);
-      }
     }
 
     if (data.status == "delivered") {

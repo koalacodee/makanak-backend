@@ -11,6 +11,7 @@ import { CreateOrderUseCase } from "../application/create-order.use-case";
 import { AssignOrderToDriverUseCase } from "../application/assign-order-to-driver.use-case";
 import { ChangeOrderStatusUseCase } from "../application/change-order-status.use-case";
 import { AttachmentRepository } from "@/shared/attachments";
+import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
 
 export const ordersModule = new Elysia({ name: "ordersModule" })
   .decorate("orderRepo", new OrderRepository(db))
@@ -23,4 +24,5 @@ export const ordersModule = new Elysia({ name: "ordersModule" })
   .decorate("getOrderUC", new GetOrderUseCase())
   .decorate("createOrderUC", new CreateOrderUseCase())
   .decorate("assignOrderToDriverUC", new AssignOrderToDriverUseCase())
-  .decorate("changeOrderStatusUC", new ChangeOrderStatusUseCase());
+  .decorate("changeOrderStatusUC", new ChangeOrderStatusUseCase())
+  .decorate("upsertCustomerUC", new UpsertCustomerUseCase());

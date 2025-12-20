@@ -50,6 +50,10 @@ export const OrderDto = t.Object({
   createdAt: t.String({ format: "date-time" }),
   deliveredAt: t.Optional(t.String({ format: "date-time" })),
   receiptImage: t.Optional(t.String({ format: "uri" })),
+  paymentMethod: t.Optional(PaymentMethodEnum),
+  pointsUsed: t.Optional(t.Integer()),
+  pointsDiscount: t.Optional(t.Number()),
+  date: t.Optional(t.String({ format: "date-time" })),
 });
 
 export const OrderItemInputDto = t.Object({
@@ -60,6 +64,7 @@ export const OrderItemInputDto = t.Object({
 export const OrderInputDto = t.Object({
   customerName: t.String(),
   phone: t.String(),
+  password: t.String(),
   address: t.String(),
   items: t.Array(OrderItemInputDto),
   paymentMethod: PaymentMethodEnum,
