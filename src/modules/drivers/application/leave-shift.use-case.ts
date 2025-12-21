@@ -8,7 +8,6 @@ export class LeaveShiftUseCase {
         { path: "driverId", message: "Driver is busy" },
       ]);
     }
-    await redis.srem("in_shift_drivers", driverId);
     await redis.lrem("available_drivers", 1, driverId);
     return { success: true };
   }

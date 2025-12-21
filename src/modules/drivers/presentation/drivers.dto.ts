@@ -1,3 +1,7 @@
+import {
+  OrderDto,
+  OrderStatusEnum,
+} from "@/modules/orders/presentation/orders.dto";
 import { Static, t } from "elysia";
 
 export const SuccessResponseDto = t.Object({
@@ -13,7 +17,20 @@ export const ReadyOrderDto = t.Object({
 
 export const JoinShiftResponseDto = t.Object({
   success: t.Boolean(),
-  readyOrders: t.Array(ReadyOrderDto),
+  readyOrders: t.Array(
+    t.Intersect([
+      OrderDto,
+      t.Object({
+        shouldTake: t.Nullable(t.Number()),
+      }),
+    ])
+  ),
+  counts: t.Array(
+    t.Object({
+      status: OrderStatusEnum,
+      count: t.Number(),
+    })
+  ),
 });
 
 export const MarkAsReadyResponseDto = t.Object({

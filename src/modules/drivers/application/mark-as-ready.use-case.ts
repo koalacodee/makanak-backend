@@ -25,6 +25,8 @@ export class MarkAsReadyUseCase {
 
     const driverId = await assignDriverAtomic();
 
+    console.log(driverId);
+
     if (driverId) {
       // Update order with driverId
       await orderRepo.update(orderId, { driverId });
@@ -41,6 +43,8 @@ export class MarkAsReadyUseCase {
 
       return { success: true, driverId: driverId };
     }
+
+    await redis.rpush("idle_ready_orders", orderId);
 
     return { success: true, driverId: undefined };
   }
@@ -67,6 +71,7 @@ async function assignDriverAtomic() {
 
     -- رجّعه تاني (لسه idle/assigned)
     redis.call("RPUSH", KEYS[1], driverId)
+    redis.call("SADD", KEYS[2], driverId)
 
     return driverId
   `;

@@ -233,32 +233,40 @@ export class OrderRepository implements IOrderRepository {
     };
   }
 
-  async getReadyOrdersForDriver(driverId: string): Promise<
-    Array<{
-      orderId: string;
-      shouldTake: number | null;
-      customerName: string;
-      customerAddress: string;
-    }>
-  > {
-    const result = await this.database
+  async getReadyOrdersForDriver(driverId: string): Promise<{
+    orders: Order[];
+    counts: { status: OrderStatus; count: number }[];
+  }> {
+    const result = await this.database.query.orders.findMany({
+      where: and(
+        inArray(orders.status, ["ready", "out_for_delivery"]),
+        eq(orders.driverId, driverId)
+      ),
+      orderBy: desc(orders.createdAt),
+      with: {
+        items: true,
+      },
+    });
+
+    const ordersCounts = await this.database
       .select({
-        orderId: orders.id,
-        total: orders.total,
-        paymentMethod: orders.paymentMethod,
-        customerName: orders.customerName,
-        customerAddress: orders.address,
+        status: orders.status,
+        count: count(),
       })
       .from(orders)
-      .where(and(eq(orders.status, "ready"), eq(orders.driverId, driverId)))
-      .orderBy(desc(orders.createdAt));
+      .where(
+        and(
+          inArray(orders.status, ["ready", "out_for_delivery", "delivered"]),
+          eq(orders.driverId, driverId)
+        )
+      )
+      .groupBy(orders.status);
 
-    return result.map((row) => ({
-      orderId: row.orderId,
-      shouldTake:
-        row.paymentMethod === "cod" && row.total ? parseFloat(row.total) : null,
-      customerName: row.customerName,
-      customerAddress: row.customerAddress,
-    }));
+    return {
+      orders: result.map((row) =>
+        this.mapToEntity(row, row.items.map(this.mapOrderItemToEntity))
+      ),
+      counts: ordersCounts,
+    };
   }
 }

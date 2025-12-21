@@ -7,6 +7,8 @@ import {
   JoinShiftResponseDto,
 } from "./drivers.dto";
 import { driverSocketService } from "../infrastructure/driver-socket.service";
+import { Order } from "@/modules/orders/domain/order.entity";
+import { OrderDto } from "@/modules/orders/presentation/orders.dto";
 
 export const driversController = new Elysia({ prefix: "/driver" })
   .use(driversModule)
@@ -79,7 +81,34 @@ export const driversController = new Elysia({ prefix: "/driver" })
     "/join-shift",
     async ({ user, joinShiftUC, orderRepo }) => {
       const result = await joinShiftUC.execute(user.id, orderRepo);
-      return result;
+      return {
+        success: result.success,
+        readyOrders: result.readyOrders.map((order) => ({
+          ...order,
+          items: order.orderItems.map((item) => ({
+            ...item,
+            originalPrice: item.price ?? undefined,
+          })),
+          subtotal: order.subtotal ?? undefined,
+          deliveryFee: order.deliveryFee ?? undefined,
+          total: order.total,
+          driverId: order.driverId ?? undefined,
+          createdAt: order.createdAt,
+          referenceCode: order.referenceCode ?? undefined,
+          deliveredAt: order.deliveredAt ?? undefined,
+          date: order.date ?? undefined,
+          timestamp: order.timestamp ?? undefined,
+          deliveryTimestamp: order.deliveryTimestamp ?? undefined,
+          paymentMethod: order.paymentMethod ?? undefined,
+          pointsUsed: order.pointsUsed ?? undefined,
+          pointsDiscount: order.pointsDiscount
+            ? parseFloat(order.pointsDiscount)
+            : undefined,
+          status: order.status,
+          shouldTake: order.shouldTake,
+        })),
+        counts: result.counts,
+      };
     },
     {
       response: JoinShiftResponseDto,
@@ -103,13 +132,22 @@ export const driversController = new Elysia({ prefix: "/driver" })
         user.id,
         orderRepo
       );
-      return result;
+      return {
+        ...result,
+        items: result.orderItems.map((item) => ({
+          ...item,
+          originalPrice: item.price ?? undefined,
+        })),
+        pointsDiscount: result.pointsDiscount
+          ? parseFloat(result.pointsDiscount)
+          : undefined,
+      };
     },
     {
       params: t.Object({
         orderId: t.String(),
       }),
-      response: SuccessResponseDto,
+      response: OrderDto,
     }
   )
   .post(

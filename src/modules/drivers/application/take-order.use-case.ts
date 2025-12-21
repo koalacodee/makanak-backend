@@ -1,13 +1,14 @@
 import type { IOrderRepository } from "../../orders/domain/orders.iface";
 import redis from "@/shared/redis";
 import { UnauthorizedError, NotFoundError } from "@/shared/presentation";
+import { Order } from "@/modules/orders/domain/order.entity";
 
 export class TakeOrderUseCase {
   async execute(
     orderId: string,
     driverId: string,
     orderRepo: IOrderRepository
-  ): Promise<{ success: boolean }> {
+  ): Promise<Order> {
     const order = await orderRepo.findById(orderId);
 
     if (!order) {
@@ -24,6 +25,7 @@ export class TakeOrderUseCase {
 
     await redis.sadd("busy_drivers", driverId);
     await redis.lrem("available_drivers", 1, driverId);
-    return { success: true };
+
+    return await orderRepo.update(orderId, { status: "out_for_delivery" });
   }
 }
