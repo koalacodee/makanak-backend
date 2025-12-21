@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "points_earned" integer DEFAULT 0;

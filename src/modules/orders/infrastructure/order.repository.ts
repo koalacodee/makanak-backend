@@ -74,6 +74,7 @@ export class OrderRepository implements IOrderRepository {
     paymentMethod: string;
     pointsUsed?: number;
     pointsDiscount?: string;
+    pointsEarned?: number;
   }): Promise<Order> {
     const orderId = Bun.randomUUIDv7();
 
@@ -105,6 +106,7 @@ export class OrderRepository implements IOrderRepository {
           paymentMethod: data.paymentMethod as any,
           pointsUsed: data.pointsUsed || 0,
           pointsDiscount: data.pointsDiscount || "0",
+          pointsEarned: data.pointsEarned || 0,
         })
         .returning();
 
@@ -214,6 +216,7 @@ export class OrderRepository implements IOrderRepository {
       paymentMethod: (row.paymentMethod as any) || null,
       pointsUsed: row.pointsUsed || undefined,
       pointsDiscount: row.pointsDiscount || undefined,
+      pointsEarned: row.pointsEarned || undefined,
       date: row.date ? row.date.toISOString() : undefined,
       timestamp: row.timestamp || null,
       deliveryTimestamp: row.deliveryTimestamp || null,

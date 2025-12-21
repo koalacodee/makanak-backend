@@ -11,27 +11,7 @@ import {
 import { authGuard } from "@/modules/auth";
 
 export const customersController = new Elysia({ prefix: "/customers" })
-  .use(authGuard(["admin"]))
   .use(customersModule)
-  .get(
-    "/",
-    async ({ getCustomersUC, customerRepo }) => {
-      const customers = await getCustomersUC.execute(customerRepo);
-      return customers.map((customer) => ({
-        phone: customer.phone,
-        name: customer.name ?? undefined,
-        address: customer.address ?? undefined,
-        points: customer.points,
-        totalSpent: customer.totalSpent
-          ? parseFloat(customer.totalSpent)
-          : undefined,
-        totalOrders: customer.totalOrders ?? undefined,
-      }));
-    },
-    {
-      response: CustomersListDto,
-    }
-  )
   .post(
     "/:phone",
     async ({ body, getCustomerUC, customerRepo }) => {
@@ -127,5 +107,25 @@ export const customersController = new Elysia({ prefix: "/customers" })
     {
       body: GetCustomerDto,
       response: CustomerPointsInfoDto,
+    }
+  )
+  .use(authGuard(["admin"]))
+  .get(
+    "/",
+    async ({ getCustomersUC, customerRepo }) => {
+      const customers = await getCustomersUC.execute(customerRepo);
+      return customers.map((customer) => ({
+        phone: customer.phone,
+        name: customer.name ?? undefined,
+        address: customer.address ?? undefined,
+        points: customer.points,
+        totalSpent: customer.totalSpent
+          ? parseFloat(customer.totalSpent)
+          : undefined,
+        totalOrders: customer.totalOrders ?? undefined,
+      }));
+    },
+    {
+      response: CustomersListDto,
     }
   );

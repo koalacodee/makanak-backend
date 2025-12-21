@@ -109,7 +109,11 @@ export class CreateOrderUseCase {
         },
       ]);
     }
-
+    // Calculate total amount for customer stats
+    const totalAmount = subtotal + deliveryFee - discount;
+    const earnValue = settings?.pointsSystem?.value;
+    const pointsToEarn =
+      earnValue && earnValue > 0 ? Math.floor(totalAmount / earnValue) : 0;
     // Create order
     const order = await orderRepo.create({
       customerName: data.customerName,
@@ -125,6 +129,7 @@ export class CreateOrderUseCase {
       paymentMethod: data.paymentMethod,
       pointsUsed: data.pointsToUse || 0,
       pointsDiscount: discount.toString(),
+      pointsEarned: pointsToEarn,
     });
 
     let receiptUploadUrl: SignedPutUrl | null = null;
@@ -149,9 +154,23 @@ export class CreateOrderUseCase {
       );
     }
 
-    // Calculate and update points (only if order is completed/delivered)
-    // Points are calculated when order status changes to "delivered"
-    // This will be handled in UpdateOrderUseCase when status changes to "delivered"
+    // Apply changes immediately when order is created:
+    // 1. Deduct stock
+    // 2. Deduct points (if used)
+    // 3. Update customer totalSpent and totalOrders
+    await Promise.all([
+      productRepo.updateStockMany(
+        data.items.map((item) => ({
+          id: item.id,
+          delta: -item.quantity,
+        }))
+      ),
+      customerRepo.update(data.phone, {
+        pointsDelta: pointsToEarn - (data.pointsToUse ?? 0),
+        totalSpentDelta: totalAmount,
+        totalOrdersDelta: 1,
+      }),
+    ]);
 
     return { order, receiptUploadUrl: receiptUploadUrl?.signedUrl };
   }

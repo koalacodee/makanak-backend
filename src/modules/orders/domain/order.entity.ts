@@ -33,6 +33,7 @@ export interface Order {
   paymentMethod?: PaymentMethod;
   pointsUsed?: number;
   pointsDiscount?: string; // decimal as string from DB
+  pointsEarned?: number;
   // Legacy fields
   date?: string;
   timestamp?: number | null;

@@ -64,6 +64,13 @@
       "when": 1766239017217,
       "tag": "0008_fearless_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1766296355669,
+      "tag": "0009_flawless_shocker",
+      "breakpoints": true
     }
   ]
 }

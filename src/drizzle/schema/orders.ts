@@ -38,6 +38,7 @@ export const orders = pgTable(
       "cod" | "online"
     >(),
     pointsUsed: integer("points_used").default(0),
+    pointsEarned: integer("points_earned").default(0),
     pointsDiscount: decimal("points_discount", {
       precision: 10,
       scale: 2,

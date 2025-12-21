@@ -20,6 +20,8 @@ export interface CustomerInput {
 export interface CustomerUpdateInput {
   points?: number; // Set points to this value
   pointsDelta?: number; // Add/subtract from current points
+  totalSpentDelta?: number; // Add/subtract from current totalSpent
+  totalOrdersDelta?: number; // Add/subtract from current totalOrders
   name?: string;
   address?: string;
 }

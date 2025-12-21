@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { customers } from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { ICustomerRepository } from "../domain/customers.iface";
@@ -67,7 +67,17 @@ export class CustomerRepository implements ICustomerRepository {
       updateData.points = data.points;
     } else if (data.pointsDelta !== undefined) {
       // Add/subtract from current points
-      updateData.points = existing.points + data.pointsDelta;
+      updateData.points = sql`${customers.points} + ${data.pointsDelta}`;
+    }
+
+    if (data.totalSpentDelta !== undefined) {
+      // Add/subtract from current totalSpent (decimal)
+      updateData.totalSpent = sql`COALESCE(${customers.totalSpent}, 0) + ${data.totalSpentDelta}`;
+    }
+
+    if (data.totalOrdersDelta !== undefined) {
+      // Add/subtract from current totalOrders
+      updateData.totalOrders = sql`COALESCE(${customers.totalOrders}, 0) + ${data.totalOrdersDelta}`;
     }
 
     const [result] = await this.database

@@ -1,9 +1,9 @@
 import { ICustomerRepository } from "@/modules/customers/domain/customers.iface";
 import { Order, OrderStatus } from "../domain/order.entity";
 import { IOrderRepository } from "../domain/orders.iface";
-import { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+
 import { IProductRepository } from "@/modules/products/domain/products.iface";
-import { BadRequestError, NotFoundError } from "@/shared/presentation";
+import { NotFoundError } from "@/shared/presentation";
 import { MarkAsReadyUseCase } from "@/modules/drivers/application/mark-as-ready.use-case";
 import { driverSocketService } from "@/modules/drivers/infrastructure/driver-socket.service";
 
@@ -12,12 +12,11 @@ export class ChangeOrderStatusUseCase {
     data: { id: string; status: OrderStatus },
     orderRepo: IOrderRepository,
     customerRepo: ICustomerRepository,
-    settingsRepo: ISettingsRepository,
+
     productRepo: IProductRepository,
     markAsReadyUC: MarkAsReadyUseCase
   ): Promise<Order> {
     const existing = await orderRepo.findById(data.id);
-    const settings = await settingsRepo.find();
     if (!existing) {
       throw new NotFoundError([{ path: "order", message: "Order not found" }]);
     }
@@ -26,23 +25,31 @@ export class ChangeOrderStatusUseCase {
       return existing;
     }
 
-    if (data.status == "delivered") {
-      const cashToBePaid =
-        existing.total - parseFloat(existing.pointsDiscount ?? "0");
-      const pointsToBeEarned = Math.floor(
-        cashToBePaid / (settings?.pointsSystem?.value || 1)
-      );
-      const pointsDelta = pointsToBeEarned - (existing.pointsUsed ?? 0);
+    // If order is being cancelled, revert all changes made when order was created
+    if (data.status === "cancelled" && existing.status !== "cancelled") {
+      // Use the order total which is already calculated as subtotal + deliveryFee - pointsDiscount
+      const totalAmount = existing.total;
+
       await Promise.all([
-        customerRepo.update(existing.phone, {
-          pointsDelta,
-        }),
+        // Restore stock
         productRepo.updateStockMany(
           existing.orderItems.map((item) => ({
             id: item.productId,
-            delta: -item.quantity,
+            delta: item.quantity, // Add back the stock
           }))
         ),
+
+        // Restore points (if points were used)
+        existing.pointsUsed && existing.pointsUsed > 0
+          ? customerRepo.update(existing.phone, {
+              pointsDelta: existing.pointsUsed - (existing.pointsEarned ?? 0), // Add back the points
+            })
+          : Promise.resolve(),
+        // Revert customer stats
+        customerRepo.update(existing.phone, {
+          totalSpentDelta: -totalAmount,
+          totalOrdersDelta: -1,
+        }),
       ]);
     } else if (data.status == "ready") {
       await markAsReadyUC.execute(data.id, orderRepo, driverSocketService);

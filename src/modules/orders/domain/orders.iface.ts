@@ -19,6 +19,7 @@ export interface IOrderRepository {
     paymentMethod: PaymentMethod;
     pointsUsed?: number;
     pointsDiscount?: string;
+    pointsEarned?: number;
   }): Promise<Order>;
   update(
     id: string,
