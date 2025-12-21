@@ -102,7 +102,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
     }
   )
   // Protected routes - require authentication
-  .use(authGuard(["admin", "driver", "cs"]))
+  .use(authGuard(["admin", "driver", "cs", "inventory"]))
   .get(
     "/",
     async ({ query, getOrdersUC, orderRepo, attachmentRepo }) => {
@@ -201,6 +201,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       customerRepo,
       settingsRepo,
       productRepo,
+      markAsReadyUC,
     }) => {
       const order = await changeOrderStatusUC.execute(
         {
@@ -210,7 +211,8 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         orderRepo,
         customerRepo,
         settingsRepo,
-        productRepo
+        productRepo,
+        markAsReadyUC
       );
       return {
         ...order,

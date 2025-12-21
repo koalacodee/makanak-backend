@@ -13,7 +13,7 @@ export const authGuard = (allowedRoles?: UserRole[]) => {
         secret: process.env.JWT_SECRET || "change-me-in-production",
       })
     )
-    .derive(async ({ accessJwt, headers }) => {
+    .derive({ as: "scoped" }, async ({ accessJwt, headers }) => {
       const authHeader = headers.authorization;
 
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -39,6 +39,7 @@ export const authGuard = (allowedRoles?: UserRole[]) => {
 
       const userId = payload.sub as string;
       const role = (payload.role as UserRole) || undefined;
+      console.log(role);
 
       // Check role if specified
       if (allowedRoles && role && !allowedRoles.includes(role)) {

@@ -4,6 +4,8 @@ import { IOrderRepository } from "../domain/orders.iface";
 import { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
 import { IProductRepository } from "@/modules/products/domain/products.iface";
 import { BadRequestError, NotFoundError } from "@/shared/presentation";
+import { MarkAsReadyUseCase } from "@/modules/drivers/application/mark-as-ready.use-case";
+import { driverSocketService } from "@/modules/drivers/infrastructure/driver-socket.service";
 
 export class ChangeOrderStatusUseCase {
   async execute(
@@ -11,7 +13,8 @@ export class ChangeOrderStatusUseCase {
     orderRepo: IOrderRepository,
     customerRepo: ICustomerRepository,
     settingsRepo: ISettingsRepository,
-    productRepo: IProductRepository
+    productRepo: IProductRepository,
+    markAsReadyUC: MarkAsReadyUseCase
   ): Promise<Order> {
     const existing = await orderRepo.findById(data.id);
     const settings = await settingsRepo.find();
@@ -41,6 +44,8 @@ export class ChangeOrderStatusUseCase {
           }))
         ),
       ]);
+    } else if (data.status == "ready") {
+      await markAsReadyUC.execute(data.id, orderRepo, driverSocketService);
     }
 
     return await orderRepo.update(data.id, {

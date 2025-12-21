@@ -229,4 +229,33 @@ export class OrderRepository implements IOrderRepository {
       price: parseFloat(row.price || "0"),
     };
   }
+
+  async getReadyOrdersForDriver(driverId: string): Promise<
+    Array<{
+      orderId: string;
+      shouldTake: number | null;
+      customerName: string;
+      customerAddress: string;
+    }>
+  > {
+    const result = await this.database
+      .select({
+        orderId: orders.id,
+        total: orders.total,
+        paymentMethod: orders.paymentMethod,
+        customerName: orders.customerName,
+        customerAddress: orders.address,
+      })
+      .from(orders)
+      .where(and(eq(orders.status, "ready"), eq(orders.driverId, driverId)))
+      .orderBy(desc(orders.createdAt));
+
+    return result.map((row) => ({
+      orderId: row.orderId,
+      shouldTake:
+        row.paymentMethod === "cod" && row.total ? parseFloat(row.total) : null,
+      customerName: row.customerName,
+      customerAddress: row.customerAddress,
+    }));
+  }
 }

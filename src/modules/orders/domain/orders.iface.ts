@@ -28,4 +28,12 @@ export interface IOrderRepository {
       deliveredAt?: Date;
     }
   ): Promise<Order>;
+  getReadyOrdersForDriver(driverId: string): Promise<
+    Array<{
+      orderId: string;
+      shouldTake: number | null;
+      customerName: string;
+      customerAddress: string;
+    }>
+  >;
 }

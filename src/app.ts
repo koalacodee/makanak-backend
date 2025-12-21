@@ -9,6 +9,7 @@ import { suppliersController } from "./modules/suppliers";
 import { settingsController } from "./modules/settings";
 import { customersController } from "./modules/customers";
 import { cartController } from "./modules/cart";
+import { driversController } from "./modules/drivers";
 import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
 import openapi from "@elysiajs/openapi";
 import cors from "@elysiajs/cors";
@@ -27,8 +28,8 @@ export const app = new Elysia()
         if (!origin) return false;
         return allowedOrigins.includes(origin) || allowedOrigins.includes("*");
       },
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+      // methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+      // allowedHeaders: ["Content-Type", "Authorization"],
     })
   )
   .use(errorHandler)
@@ -48,6 +49,7 @@ export const app = new Elysia()
       .use(settingsController)
       .use(customersController)
       .use(cartController)
+      .use(driversController)
       .use(fileHubWebHookController)
       .use(
         openapi({
