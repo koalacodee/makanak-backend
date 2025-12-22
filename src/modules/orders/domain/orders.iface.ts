@@ -6,6 +6,7 @@ export interface IOrderRepository {
     driverId?: string;
     page?: number;
     limit?: number;
+    search?: string;
   }): Promise<{ data: Order[]; total: number }>;
   findById(id: string): Promise<Order | null>;
   create(data: {

@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, ilike, or, sql } from "drizzle-orm";
 import { customers } from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { ICustomerRepository } from "../domain/customers.iface";
@@ -9,6 +9,7 @@ import type {
   CustomerPointsInfo,
 } from "../domain/customer.entity";
 import { NotFoundError } from "../../../shared/presentation/errors";
+import { GetCustomersListQuery } from "../presentation/customers.dto";
 
 export class CustomerRepository implements ICustomerRepository {
   constructor(private database: typeof db) {}
@@ -128,8 +129,20 @@ export class CustomerRepository implements ICustomerRepository {
     };
   }
 
-  async findAll(): Promise<Customer[]> {
-    const rows = await this.database.select().from(customers);
+  async findAll(query?: GetCustomersListQuery): Promise<Customer[]> {
+    const q = this.database.select().from(customers);
+
+    if (query?.search) {
+      q.where(
+        or(
+          ilike(customers.phone, `%${query.search}%`),
+          ilike(customers.name, `%${query.search}%`)
+        )
+      );
+    }
+
+    const rows = await q;
+
     return rows.map((row) => this.mapToEntity(row));
   }
 

@@ -7,6 +7,7 @@ import {
   CustomerPointsInfoDto,
   CustomersListDto,
   GetCustomerDto,
+  GetCustomersListQueryDto,
 } from "./customers.dto";
 import { authGuard } from "@/modules/auth";
 
@@ -112,8 +113,8 @@ export const customersController = new Elysia({ prefix: "/customers" })
   .use(authGuard(["admin"]))
   .get(
     "/",
-    async ({ getCustomersUC, customerRepo }) => {
-      const customers = await getCustomersUC.execute(customerRepo);
+    async ({ query, getCustomersUC, customerRepo }) => {
+      const customers = await getCustomersUC.execute(query, customerRepo);
       return customers.map((customer) => ({
         phone: customer.phone,
         name: customer.name ?? undefined,
@@ -127,5 +128,6 @@ export const customersController = new Elysia({ prefix: "/customers" })
     },
     {
       response: CustomersListDto,
+      query: GetCustomersListQueryDto,
     }
   );

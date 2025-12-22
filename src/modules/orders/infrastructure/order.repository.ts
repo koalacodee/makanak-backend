@@ -1,4 +1,4 @@
-import { eq, and, desc, count, inArray } from "drizzle-orm";
+import { eq, and, desc, count, inArray, ilike, or } from "drizzle-orm";
 import { orders, orderItems, products } from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { IOrderRepository } from "../domain/orders.iface";
@@ -12,6 +12,7 @@ export class OrderRepository implements IOrderRepository {
     driverId?: string;
     page?: number;
     limit?: number;
+    search?: string;
   }): Promise<{ data: Order[]; total: number }> {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
@@ -23,6 +24,15 @@ export class OrderRepository implements IOrderRepository {
     }
     if (filters.driverId) {
       conditions.push(eq(orders.driverId, filters.driverId));
+    }
+    if (filters.search) {
+      conditions.push(
+        or(
+          ilike(orders.customerName, `%${filters.search}%`),
+          ilike(orders.phone, `%${filters.search}%`),
+          ilike(orders.referenceCode, `%${filters.search}%`)
+        )
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

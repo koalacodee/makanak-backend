@@ -11,6 +11,7 @@ export class GetOrdersUseCase {
       driverId?: string;
       page?: number;
       limit?: number;
+      search?: string;
     },
     repo: IOrderRepository,
     attachmentRepo: IAttachmentRepository
@@ -49,6 +50,7 @@ export class GetOrdersUseCase {
       driverId: filters.driverId,
       page,
       limit,
+      search: filters.search,
     });
 
     const attachments = await attachmentRepo.findByTargetIds(

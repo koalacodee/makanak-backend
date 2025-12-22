@@ -112,6 +112,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
           driverId: query.driverId,
           page: query.page,
           limit: query.limit,
+          search: query.search,
         },
         orderRepo,
         attachmentRepo

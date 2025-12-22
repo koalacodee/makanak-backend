@@ -1,3 +1,4 @@
+import { GetCustomersListQuery } from "../presentation/customers.dto";
 import type {
   Customer,
   CustomerInput,
@@ -11,5 +12,5 @@ export interface ICustomerRepository {
   update(phone: string, data: CustomerUpdateInput): Promise<Customer>;
   upsert(data: CustomerInput): Promise<Customer>;
   getPointsInfo(phone: string): Promise<CustomerPointsInfo | null>;
-  findAll(): Promise<Customer[]>;
+  findAll(query?: GetCustomersListQuery): Promise<Customer[]>;
 }

@@ -35,9 +35,14 @@ export const CustomerPointsInfoDto = t.Object({
   totalOrders: t.Number(),
 });
 
+export const GetCustomersListQueryDto = t.Object({
+  search: t.Optional(t.String()),
+});
+
 export const CustomersListDto = t.Array(CustomerDto);
 
 export type Customer = Static<typeof CustomerDto>;
 export type CustomerInput = Static<typeof CustomerInputDto>;
 export type CustomerUpdate = Static<typeof CustomerUpdateDto>;
 export type CustomerPointsInfo = Static<typeof CustomerPointsInfoDto>;
+export type GetCustomersListQuery = Static<typeof GetCustomersListQueryDto>;

@@ -83,6 +83,7 @@ export const OrderQueryDto = t.Object({
   driverId: t.Optional(t.String({ format: "uuid" })),
   page: t.Optional(t.Integer({ default: 1, minimum: 1 })),
   limit: t.Optional(t.Integer({ default: 20, minimum: 1, maximum: 100 })),
+  search: t.Optional(t.String()),
 });
 
 export const AssignOrderToDriverDto = t.Object({
