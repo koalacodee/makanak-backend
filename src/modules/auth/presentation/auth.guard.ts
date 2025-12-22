@@ -2,11 +2,9 @@ import { Elysia } from "elysia";
 import { jwt } from "@elysiajs/jwt";
 import type { UserRole } from "../domain/user.entity";
 import { UnauthorizedError } from "../../../shared/presentation/errors";
-import bearer from "@elysiajs/bearer";
 
 export const authGuard = (allowedRoles?: UserRole[]) => {
   return new Elysia({ name: "authGuard" })
-    .use(bearer())
     .use(
       jwt({
         name: "accessJwt",
@@ -14,7 +12,7 @@ export const authGuard = (allowedRoles?: UserRole[]) => {
       })
     )
     .derive({ as: "scoped" }, async ({ accessJwt, headers }) => {
-      const authHeader = headers.authorization;
+      const authHeader = headers.authorization || headers.Authorization;
 
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         throw new UnauthorizedError([
