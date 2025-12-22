@@ -1,5 +1,9 @@
 import { Elysia } from "elysia";
-import { errorHandler } from "./shared/presentation/error-handler";
+import {
+  errorHandler,
+  onErrorHandler,
+  errorDefinitions,
+} from "./shared/presentation/error-handler";
 import { authController } from "./modules/auth";
 import { productsController } from "./modules/products";
 import { categoriesController } from "./modules/categories";
@@ -20,6 +24,8 @@ const allowedOrigins = process.env.CORS_ORIGINS
   : ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"];
 
 export const app = new Elysia()
+  .error(errorDefinitions)
+  .onError(onErrorHandler)
   .use(
     cors({
       credentials: true,
@@ -32,7 +38,6 @@ export const app = new Elysia()
       // allowedHeaders: ["Content-Type", "Authorization"],
     })
   )
-  .use(errorHandler)
   .get("/", () => ({
     name: "Makanak API",
     version: "1.0.0",
@@ -40,6 +45,7 @@ export const app = new Elysia()
   }))
   .group("/v1", (app) =>
     app
+      .use(errorHandler)
       .use(authController)
       .use(productsController)
       .use(categoriesController)

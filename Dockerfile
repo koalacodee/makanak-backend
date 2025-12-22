@@ -24,12 +24,13 @@ COPY . .
 # [optional] tests & build
 ENV NODE_ENV=production
 # RUN bun test
-RUN bun build --minify --target bun --outfile server.js src/index.ts
+RUN bun build --minify --target bun --sourcemap=external --outfile server.js src/index.ts
 
 # copy production dependencies and source code into final image
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/server.js .
+COPY --from=prerelease /usr/src/app/server.js.map .
 COPY --from=prerelease /usr/src/app/package.json .
 COPY --from=prerelease /usr/src/app/drizzle ./drizzle
 

@@ -7,11 +7,11 @@ export class NotFoundError extends Error {
   }
 
   toResponse() {
-    return {
+    return Response.json({
       error: "Not Found",
       status: this.status,
       details: this.details,
-    };
+    });
   }
 }
 
@@ -24,11 +24,11 @@ export class BadRequestError extends Error {
   }
 
   toResponse() {
-    return {
+    return Response.json({
       error: "Bad Request",
       status: this.status,
       details: this.details,
-    };
+    });
   }
 }
 
@@ -41,11 +41,11 @@ export class UnauthorizedError extends Error {
   }
 
   toResponse() {
-    return {
+    return Response.json({
       error: "Unauthorized",
       status: this.status,
       details: this.details,
-    };
+    });
   }
 }
 
@@ -58,10 +58,10 @@ export class ValidationError extends BadRequestError {
   }
 
   toResponse() {
-    return {
+    return Response.json({
       error: "Bad Request",
       status: this.status,
       details: this.details,
-    };
+    });
   }
 }
