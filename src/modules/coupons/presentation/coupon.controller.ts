@@ -7,16 +7,6 @@ import { authGuard } from "../../auth/presentation/auth.guard";
 export const couponController = new Elysia({ prefix: "/coupons" })
   .use(couponModule)
   .get(
-    "/",
-    async ({ getCouponsUC, couponRepo }) => {
-      const coupons = await getCouponsUC.execute(couponRepo);
-      return coupons;
-    },
-    {
-      response: t.Array(CouponDto),
-    }
-  )
-  .get(
     "/name/:name",
     async ({ params, getCouponByNameUC, couponRepo }) => {
       const coupon = await getCouponByNameUC.execute(params.name, couponRepo);
@@ -42,7 +32,17 @@ export const couponController = new Elysia({ prefix: "/coupons" })
       response: CouponDto,
     }
   )
-  .use(authGuard(["admin", "inventory"]))
+  .use(authGuard(["admin"]))
+  .get(
+    "/",
+    async ({ getCouponsUC, couponRepo }) => {
+      const coupons = await getCouponsUC.execute(couponRepo);
+      return coupons;
+    },
+    {
+      response: t.Array(CouponDto),
+    }
+  )
   .post(
     "/",
     async ({ body, createCouponUC, couponRepo }) => {
