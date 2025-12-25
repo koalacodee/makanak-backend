@@ -26,6 +26,20 @@ export class CouponRepository implements ICouponRepository {
     return this.mapToEntity(result[0]);
   }
 
+  async findByName(name: string): Promise<Coupon | null> {
+    const result = await this.database
+      .select()
+      .from(coupons)
+      .where(eq(coupons.name, name))
+      .limit(1);
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    return this.mapToEntity(result[0]);
+  }
+
   async create(data: CouponInput): Promise<Coupon> {
     const id = Bun.randomUUIDv7();
 

@@ -17,6 +17,19 @@ export const couponController = new Elysia({ prefix: "/coupons" })
     }
   )
   .get(
+    "/name/:name",
+    async ({ params, getCouponByNameUC, couponRepo }) => {
+      const coupon = await getCouponByNameUC.execute(params.name, couponRepo);
+      return coupon;
+    },
+    {
+      params: t.Object({
+        name: t.String(),
+      }),
+      response: CouponDto,
+    }
+  )
+  .get(
     "/:id",
     async ({ params, getCouponUC, couponRepo }) => {
       const coupon = await getCouponUC.execute(params.id, couponRepo);
