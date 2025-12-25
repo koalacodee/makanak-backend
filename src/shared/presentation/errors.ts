@@ -41,11 +41,19 @@ export class UnauthorizedError extends Error {
   }
 
   toResponse() {
-    return Response.json({
-      error: "Unauthorized",
-      status: this.status,
-      details: this.details,
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized",
+        status: this.status,
+        details: this.details,
+      }),
+      {
+        status: this.status,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   }
 }
 
