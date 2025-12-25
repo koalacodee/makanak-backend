@@ -39,6 +39,12 @@ export const orders = pgTable(
     >(),
     pointsUsed: integer("points_used").default(0),
     pointsEarned: integer("points_earned").default(0),
+    couponDiscount: decimal("coupon_discount", {
+      precision: 10,
+      scale: 2,
+    })
+      .default("0")
+      .$type<number>(),
     pointsDiscount: decimal("points_discount", {
       precision: 10,
       scale: 2,

@@ -8,6 +8,7 @@ import filehub, { SignedPutUrl } from "@/shared/filehub";
 import redis from "@/shared/redis";
 import crypto from "crypto";
 import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
+import { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -19,13 +20,39 @@ export class CreateOrderUseCase {
       pointsToUse?: number;
       attachWithFileExtension?: string;
       password: string;
+      couponName?: string;
     },
     orderRepo: IOrderRepository,
     productRepo: IProductRepository,
     upsertCustomerUC: UpsertCustomerUseCase,
     settingsRepo: ISettingsRepository,
-    customerRepo: ICustomerRepository
+    customerRepo: ICustomerRepository,
+    couponRepo: ICouponRepository
   ): Promise<{ order: Order; receiptUploadUrl?: string }> {
+    let couponDiscount: number | null = null;
+    let couponData: { remainingUses: number; id: string } | null = null;
+    if (data.couponName) {
+      const coupon = await couponRepo.findByName(data.couponName);
+      if (!coupon) {
+        throw new BadRequestError([
+          {
+            path: "couponName",
+            message: "Coupon not found",
+          },
+        ]);
+      }
+
+      if (coupon.remainingUses <= 0) {
+        throw new BadRequestError([
+          {
+            path: "couponName",
+            message: "Coupon has no remaining uses",
+          },
+        ]);
+      }
+      couponDiscount = coupon.value;
+      couponData = { remainingUses: coupon.remainingUses, id: coupon.id };
+    }
     // Validate items
     if (!data.items || data.items.length === 0) {
       throw new BadRequestError([
@@ -82,9 +109,10 @@ export class CreateOrderUseCase {
 
     // Calculate total if not provided
     const deliveryFee = settings?.deliveryFee || 0;
-    const discount = data.pointsToUse
-      ? (settings?.pointsSystem?.redemptionValue || 0) * data.pointsToUse
-      : 0;
+    const discount =
+      (data.pointsToUse
+        ? (settings?.pointsSystem?.redemptionValue || 0) * data.pointsToUse
+        : 0) + (couponDiscount ?? 0);
 
     const customer = await upsertCustomerUC.execute(
       {
@@ -130,6 +158,7 @@ export class CreateOrderUseCase {
       pointsUsed: data.pointsToUse || 0,
       pointsDiscount: discount.toString(),
       pointsEarned: pointsToEarn,
+      couponDiscount: couponDiscount ?? 0,
     });
 
     let receiptUploadUrl: SignedPutUrl | null = null;
@@ -170,6 +199,11 @@ export class CreateOrderUseCase {
         totalSpentDelta: totalAmount,
         totalOrdersDelta: 1,
       }),
+      couponData
+        ? couponRepo.update(couponData.id, {
+            remainingUses: couponData.remainingUses - 1,
+          })
+        : Promise.resolve(),
     ]);
 
     return { order, receiptUploadUrl: receiptUploadUrl?.signedUrl };

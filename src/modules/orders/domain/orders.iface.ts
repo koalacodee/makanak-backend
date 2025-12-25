@@ -21,6 +21,7 @@ export interface IOrderRepository {
     pointsUsed?: number;
     pointsDiscount?: string;
     pointsEarned?: number;
+    couponDiscount?: number;
   }): Promise<Order>;
   update(
     id: string,

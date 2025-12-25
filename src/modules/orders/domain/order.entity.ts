@@ -36,6 +36,7 @@ export interface Order {
   pointsUsed?: number;
   pointsDiscount?: string; // decimal as string from DB
   pointsEarned?: number;
+  couponDiscount?: number;
   // Legacy fields
   date?: string;
   timestamp?: number | null;
