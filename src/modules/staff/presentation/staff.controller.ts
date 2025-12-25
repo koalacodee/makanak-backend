@@ -12,7 +12,7 @@ import { authGuard } from "../../auth/presentation/auth.guard";
 
 export const staffController = new Elysia({ prefix: "/staff" })
   .use(staffModule)
-  .use(authGuard(["admin"]))
+  .use(authGuard(["admin", "cs"]))
   .get(
     "/",
     async ({ query, getStaffUC, staffRepo }) => {
