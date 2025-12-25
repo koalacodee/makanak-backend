@@ -110,7 +110,7 @@ export const customersController = new Elysia({ prefix: "/customers" })
       response: CustomerPointsInfoDto,
     }
   )
-  .use(authGuard(["admin"]))
+  .use(authGuard(["admin", "cs"]))
   .get(
     "/",
     async ({ query, getCustomersUC, customerRepo }) => {
