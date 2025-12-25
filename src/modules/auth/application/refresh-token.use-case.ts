@@ -26,31 +26,8 @@ export class RefreshTokenUseCase {
       !("sub" in payload) ||
       typeof payload.sub !== "string"
     ) {
-      throw new UnauthorizedError([
-        {
-          path: "refreshToken",
-          message: "Invalid refresh token",
-        },
-      ]);
-    }
+      console.log(payload);
 
-    // Get user's refresh tokens and verify the provided token matches one of them
-    const userTokens = await refreshTokenRepo.findByUserId(payload.sub);
-    let storedToken = null;
-
-    for (const token of userTokens) {
-      const isValid = await Bun.password.verify(
-        refreshToken,
-        token.tokenHash,
-        "argon2id"
-      );
-      if (isValid) {
-        storedToken = token;
-        break;
-      }
-    }
-
-    if (!storedToken) {
       throw new UnauthorizedError([
         {
           path: "refreshToken",
@@ -71,7 +48,7 @@ export class RefreshTokenUseCase {
     }
 
     // Revoke old refresh token
-    await refreshTokenRepo.revokeToken(storedToken.tokenHash);
+    await refreshTokenRepo.revokeToken(refreshToken);
 
     // Generate new tokens
     const accessToken = await accessJwt.sign({
@@ -83,18 +60,10 @@ export class RefreshTokenUseCase {
       sub: user.id,
     });
 
-    // Hash and store new refresh token
-    const newRefreshTokenHash = await Bun.password.hash(
-      newRefreshToken,
-      "argon2id"
-    );
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
-
     await refreshTokenRepo.create({
       userId: user.id,
-      tokenHash: newRefreshTokenHash,
-      expiresAt,
+      tokenHash: refreshToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       revoked: false,
     });
 
