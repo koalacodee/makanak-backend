@@ -78,6 +78,13 @@
       "when": 1766641896456,
       "tag": "0010_aberrant_zaladane",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1766643250731,
+      "tag": "0011_bored_namor",
+      "breakpoints": true
     }
   ]
 }
