@@ -159,6 +159,7 @@ export class CreateOrderUseCase {
       pointsDiscount: discount.toString(),
       pointsEarned: pointsToEarn,
       couponDiscount: couponDiscount ?? 0,
+      couponId: couponData?.id ?? undefined,
     });
 
     let receiptUploadUrl: SignedPutUrl | null = null;
@@ -183,28 +184,8 @@ export class CreateOrderUseCase {
       );
     }
 
-    // Apply changes immediately when order is created:
-    // 1. Deduct stock
-    // 2. Deduct points (if used)
-    // 3. Update customer totalSpent and totalOrders
-    await Promise.all([
-      productRepo.updateStockMany(
-        data.items.map((item) => ({
-          id: item.id,
-          delta: -item.quantity,
-        }))
-      ),
-      customerRepo.update(data.phone, {
-        pointsDelta: pointsToEarn - (data.pointsToUse ?? 0),
-        totalSpentDelta: totalAmount,
-        totalOrdersDelta: 1,
-      }),
-      couponData
-        ? couponRepo.update(couponData.id, {
-            remainingUses: couponData.remainingUses - 1,
-          })
-        : Promise.resolve(),
-    ]);
+    // No side effects on order creation - all effects happen when status changes
+    // Stock, points, customer stats, and coupon usage will be handled when order becomes "ready"
 
     return { order, receiptUploadUrl: receiptUploadUrl?.signedUrl };
   }

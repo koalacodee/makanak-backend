@@ -45,6 +45,7 @@ export const orders = pgTable(
     })
       .default("0")
       .$type<number>(),
+    couponId: uuid("coupon_id"),
     pointsDiscount: decimal("points_discount", {
       precision: 10,
       scale: 2,
@@ -61,5 +62,6 @@ export const orders = pgTable(
     index("orders_driver_id_idx").on(table.driverId),
     index("orders_phone_idx").on(table.phone),
     index("orders_created_at_idx").on(table.createdAt),
+    index("orders_coupon_id_idx").on(table.couponId),
   ]
 );

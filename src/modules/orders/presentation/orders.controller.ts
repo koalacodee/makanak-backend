@@ -203,6 +203,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       orderRepo,
       customerRepo,
       productRepo,
+      couponRepo,
       markAsReadyUC,
     }) => {
       const order = await changeOrderStatusUC.execute(
@@ -213,6 +214,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         orderRepo,
         customerRepo,
         productRepo,
+        couponRepo,
         markAsReadyUC
       );
       return {

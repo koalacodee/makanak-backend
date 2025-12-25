@@ -115,6 +115,7 @@ export class OrderRepository implements IOrderRepository {
     pointsDiscount?: string;
     pointsEarned?: number;
     couponDiscount?: number;
+    couponId?: string;
   }): Promise<Order> {
     const orderId = Bun.randomUUIDv7();
 
@@ -148,6 +149,7 @@ export class OrderRepository implements IOrderRepository {
           pointsDiscount: data.pointsDiscount || "0",
           pointsEarned: data.pointsEarned || 0,
           couponDiscount: data.couponDiscount || 0,
+          couponId: data.couponId || null,
         })
         .returning();
 
@@ -278,6 +280,7 @@ export class OrderRepository implements IOrderRepository {
       pointsDiscount: row.pointsDiscount || undefined,
       pointsEarned: row.pointsEarned || undefined,
       couponDiscount: row.couponDiscount || undefined,
+      couponId: row.couponId || undefined,
       date: row.date ? row.date.toISOString() : undefined,
       timestamp: row.timestamp || null,
       deliveryTimestamp: row.deliveryTimestamp || null,

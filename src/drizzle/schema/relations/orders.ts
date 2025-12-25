@@ -4,6 +4,7 @@ import { customers } from "../customers";
 import { users } from "../users";
 import { staffMembers } from "../staffMembers";
 import { orderItems } from "../orderItems";
+import { coupons } from "../coupons";
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   customer: one(customers, {
@@ -19,4 +20,8 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     references: [staffMembers.userId],
   }),
   items: many(orderItems),
+  coupon: one(coupons, {
+    fields: [orders.couponId],
+    references: [coupons.id],
+  }),
 }));
