@@ -3,6 +3,7 @@ import { categories } from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { ICategoryRepository } from "../domain/categories.iface";
 import type { Category } from "../domain/category.entity";
+import { Product } from "@/modules/products/domain/product.entity";
 
 export class CategoryRepository implements ICategoryRepository {
   constructor(private database: typeof db) {}
@@ -78,6 +79,41 @@ export class CategoryRepository implements ICategoryRepository {
 
   async delete(id: string): Promise<void> {
     await this.database.delete(categories).where(eq(categories.id, id));
+  }
+
+  async findCategoryWithProductsById(
+    id: string
+  ): Promise<(Category & { products: Product[] }) | null> {
+    const result = await this.database.query.categories.findFirst({
+      where: eq(categories.id, id),
+      with: {
+        products: true,
+      },
+    });
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      ...this.mapToEntity({
+        id: result.id,
+        name: result.name,
+        icon: result.icon,
+        color: result.color,
+        isHidden: result.isHidden,
+        isLocked: result.isLocked,
+      }),
+      products: result.products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price ? parseFloat(product.price) : 0,
+        unit: product.unit,
+        category: product.categoryId,
+        description: product.description,
+        stock: product.stock,
+      })),
+    };
   }
 
   private mapToEntity(row: typeof categories.$inferSelect): Category {

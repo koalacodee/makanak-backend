@@ -5,6 +5,7 @@ import {
   CategoryDto,
   CategoryInputDto,
   CategoryQueryDto,
+  CategoryWithProductsDto,
 } from "./categories.dto";
 import { authGuard } from "../../auth/presentation/auth.guard";
 
@@ -36,6 +37,36 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
         id: t.String({ format: "uuid" }),
       }),
       response: CategoryDto,
+    }
+  )
+  .get(
+    "/:id/products",
+    async ({
+      params,
+      getCategoryWithProductsUC,
+      categoryRepo,
+      attachmentRepo,
+    }) => {
+      const categoryWithProducts = await getCategoryWithProductsUC.execute(
+        params.id,
+        categoryRepo,
+        attachmentRepo
+      );
+      return {
+        ...categoryWithProducts,
+        products: categoryWithProducts.products.map((product) => ({
+          ...product,
+          originalPrice: product.originalPrice
+            ? product.originalPrice
+            : undefined,
+        })),
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ format: "uuid" }),
+      }),
+      response: CategoryWithProductsDto,
     }
   )
   .use(authGuard(["admin", "inventory"]))
