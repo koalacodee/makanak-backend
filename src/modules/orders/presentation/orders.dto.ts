@@ -14,25 +14,14 @@ export const PaymentMethodEnum = t.Union([
   t.Literal("online"),
 ]);
 
-// export const CartItemDto = t.Object({
-//   id: t.String({ format: "uuid" }),
-//   name: t.String(),
-//   price: t.Number(),
-//   unit: t.String(),
-//   category: t.String({ format: "uuid" }),
-//   image: t.String({ format: "uri" }),
-//   description: t.String(),
-//   stock: t.Integer(),
-//   originalPrice: t.Optional(t.Number()),
-//   quantity: t.Integer(),
-// });
-
 export const OrderItemDto = t.Object({
   id: t.String({ format: "uuid" }),
   orderId: t.String({ format: "uuid" }),
   productId: t.String({ format: "uuid" }),
   quantity: t.Integer(),
   price: t.Number(),
+  productName: t.String(),
+  productStock: t.Integer(),
 });
 
 export const OrderDto = t.Object({

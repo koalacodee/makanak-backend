@@ -4,6 +4,8 @@ export interface OrderItem {
   productId: string;
   quantity: number;
   price: number;
+  productName: string;
+  productStock: number;
 }
 
 export type OrderStatus =

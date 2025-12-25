@@ -34,4 +34,5 @@ export interface IOrderRepository {
     orders: Order[];
     counts: { status: OrderStatus; count: number }[];
   }>;
+  count(filters?: { status?: OrderStatus }): Promise<number>;
 }

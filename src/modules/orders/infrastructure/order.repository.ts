@@ -43,13 +43,31 @@ export class OrderRepository implements IOrderRepository {
       offset: offset,
       orderBy: desc(orders.createdAt),
       with: {
-        items: true,
+        items: {
+          with: {
+            product: {
+              columns: {
+                name: true,
+                stock: true,
+              },
+            },
+          },
+        },
       },
     });
 
     return {
       data: result.map((order) =>
-        this.mapToEntity(order, order.items.map(this.mapOrderItemToEntity))
+        this.mapToEntity(
+          order,
+          order.items.map((item) =>
+            this.mapOrderItemToEntity(
+              item,
+              item.product.name,
+              item.product.stock
+            )
+          )
+        )
       ),
       total: result.length,
     };
@@ -59,7 +77,16 @@ export class OrderRepository implements IOrderRepository {
     const result = await this.database.query.orders.findFirst({
       where: eq(orders.id, id),
       with: {
-        items: true,
+        items: {
+          with: {
+            product: {
+              columns: {
+                name: true,
+                stock: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -69,7 +96,9 @@ export class OrderRepository implements IOrderRepository {
 
     return this.mapToEntity(
       result,
-      result.items.map(this.mapOrderItemToEntity)
+      result.items.map((item) =>
+        this.mapOrderItemToEntity(item, item.product.name, item.product.stock)
+      )
     );
   }
 
@@ -154,13 +183,22 @@ export class OrderRepository implements IOrderRepository {
         .values(rowsToInsert)
         .returning(); // ← Drizzle gives you the typed rows back
 
-      return { order, insertedRows };
+      return {
+        order,
+        insertedRows: insertedRows.map((row) => ({
+          ...row,
+          productName: productById.get(row.productId)!.name,
+          productStock: productById.get(row.productId)!.stock,
+        })),
+      };
     });
 
     // Fetch full order with items
     return this.mapToEntity(
       order.order,
-      order.insertedRows.map(this.mapOrderItemToEntity)
+      order.insertedRows.map((row) =>
+        this.mapOrderItemToEntity(row, row.productName, row.productStock)
+      )
     );
   }
 
@@ -196,11 +234,21 @@ export class OrderRepository implements IOrderRepository {
 
   private async fetchOrderItems(orderId: string): Promise<OrderItem[]> {
     const items = await this.database
-      .select()
+      .select({
+        orderItem: orderItems,
+        product: products,
+      })
       .from(orderItems)
+      .innerJoin(products, eq(orderItems.productId, products.id))
       .where(eq(orderItems.orderId, orderId));
 
-    return items.map(this.mapOrderItemToEntity);
+    return items.map((item) =>
+      this.mapOrderItemToEntity(
+        item.orderItem,
+        item.product.name,
+        item.product.stock
+      )
+    );
   }
 
   private mapToEntity(
@@ -233,13 +281,19 @@ export class OrderRepository implements IOrderRepository {
     };
   }
 
-  private mapOrderItemToEntity(row: typeof orderItems.$inferSelect): OrderItem {
+  private mapOrderItemToEntity(
+    row: typeof orderItems.$inferSelect,
+    productName: string,
+    productStock: number
+  ): OrderItem {
     return {
       id: row.id,
       orderId: row.orderId,
       productId: row.productId,
       quantity: row.quantity,
       price: parseFloat(row.price || "0"),
+      productName: productName,
+      productStock: productStock,
     };
   }
 
@@ -254,7 +308,16 @@ export class OrderRepository implements IOrderRepository {
       ),
       orderBy: desc(orders.createdAt),
       with: {
-        items: true,
+        items: {
+          with: {
+            product: {
+              columns: {
+                name: true,
+                stock: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -274,9 +337,34 @@ export class OrderRepository implements IOrderRepository {
 
     return {
       orders: result.map((row) =>
-        this.mapToEntity(row, row.items.map(this.mapOrderItemToEntity))
+        this.mapToEntity(
+          row,
+          row.items.map((item) =>
+            this.mapOrderItemToEntity(
+              item,
+              item.product.name,
+              item.product.stock
+            )
+          )
+        )
       ),
       counts: ordersCounts,
     };
+  }
+
+  async count(filters?: { status?: OrderStatus }): Promise<number> {
+    const conditions = [];
+    if (filters?.status) {
+      conditions.push(eq(orders.status, filters.status));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const result = await this.database
+      .select({ count: count() })
+      .from(orders)
+      .where(whereClause);
+
+    return result[0]?.count || 0;
   }
 }
