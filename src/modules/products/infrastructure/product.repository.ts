@@ -1,4 +1,14 @@
-import { eq, and, gte, desc, count, inArray, sql } from "drizzle-orm";
+import {
+  eq,
+  and,
+  gte,
+  desc,
+  count,
+  inArray,
+  sql,
+  or,
+  ilike,
+} from "drizzle-orm";
 import { products } from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { IProductRepository } from "../domain/products.iface";
@@ -12,6 +22,7 @@ export class ProductRepository implements IProductRepository {
     inStock?: boolean;
     page?: number;
     limit?: number;
+    search?: string;
   }): Promise<{ data: Product[]; total: number }> {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
@@ -27,6 +38,14 @@ export class ProductRepository implements IProductRepository {
       } else {
         conditions.push(eq(products.stock, 0));
       }
+    }
+    if (filters.search) {
+      conditions.push(
+        or(
+          ilike(products.name, `%${filters.search}%`),
+          ilike(products.description, `%${filters.search}%`)
+        )
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

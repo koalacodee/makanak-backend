@@ -6,6 +6,7 @@ export interface IProductRepository {
     inStock?: boolean;
     page?: number;
     limit?: number;
+    search?: string;
   }): Promise<{ data: Product[]; total: number }>;
   findById(id: string): Promise<Product | null>;
   findByIds(ids: string[]): Promise<Product[]>;

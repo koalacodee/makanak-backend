@@ -18,6 +18,7 @@ export const productsController = new Elysia({ prefix: "/products" })
         inStock: query.inStock,
         page: query.page,
         limit: query.limit,
+        search: query.search,
       };
       const result = await getProductsUC.execute(
         filters,

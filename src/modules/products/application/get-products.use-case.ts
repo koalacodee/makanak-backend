@@ -11,6 +11,7 @@ export class GetProductsUseCase {
       inStock?: boolean;
       page?: number;
       limit?: number;
+      search?: string;
     },
     repo: IProductRepository,
     attachmentRepo: IAttachmentRepository
@@ -49,6 +50,7 @@ export class GetProductsUseCase {
       inStock: filters.inStock,
       page,
       limit,
+      search: filters.search,
     });
 
     const attachments = await attachmentRepo.findByTargetIds(
