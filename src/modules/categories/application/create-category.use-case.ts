@@ -7,7 +7,11 @@ export class CreateCategoryUseCase {
     data: Omit<Category, "id"> | Category,
     repo: ICategoryRepository,
     attachWithFileExtension?: string
-  ): Promise<{ category: Category; uploadUrl?: string }> {
+  ): Promise<{
+    category: Category;
+    uploadUrl?: string;
+    newSignedUrl?: string;
+  }> {
     const cat = await repo.create(data);
 
     if (attachWithFileExtension) {
@@ -15,6 +19,7 @@ export class CreateCategoryUseCase {
         3600 * 24 * 7,
         attachWithFileExtension
       );
+      const newSignedUrl = await filehub.getSignedUrl(upload.filename);
       await redis.set(
         `filehub:${upload.filename}`,
         cat.id,
@@ -24,6 +29,7 @@ export class CreateCategoryUseCase {
       return {
         category: cat,
         uploadUrl: upload.signedUrl,
+        newSignedUrl: newSignedUrl.signedUrl,
       };
     }
     return { category: cat };

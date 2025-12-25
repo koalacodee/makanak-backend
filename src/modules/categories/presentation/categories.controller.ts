@@ -91,6 +91,7 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
       response: t.Object({
         category: CategoryDto,
         uploadUrl: t.Optional(t.String()),
+        newSignedUrl: t.Optional(t.String()),
       }),
     }
   )
@@ -104,19 +105,26 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
       if (body.isHidden !== undefined) updateData.isHidden = body.isHidden;
       if (body.isLocked !== undefined) updateData.isLocked = body.isLocked;
 
-      const category = await updateCategoryUC.execute(
+      const result = await updateCategoryUC.execute(
         params.id,
-        updateData,
+        {
+          ...updateData,
+          attachWithFileExtension: body.attachWithFileExtension ?? undefined,
+        },
         categoryRepo
       );
-      return category;
+      return result;
     },
     {
       params: t.Object({
         id: t.String({ format: "uuid" }),
       }),
       body: CategoryInputDto,
-      response: CategoryDto,
+      response: t.Object({
+        category: CategoryDto,
+        uploadUrl: t.Optional(t.String()),
+        newSignedUrl: t.Optional(t.String()),
+      }),
     }
   )
   .delete(

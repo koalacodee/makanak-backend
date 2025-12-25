@@ -87,6 +87,7 @@ export const productsController = new Elysia({ prefix: "/products" })
             : undefined,
         },
         uploadUrl: product.uploadUrl,
+        newSignedUrl: product.newSignedUrl,
       };
     },
     {
@@ -94,6 +95,7 @@ export const productsController = new Elysia({ prefix: "/products" })
       response: t.Object({
         product: ProductDto,
         uploadUrl: t.Optional(t.String()),
+        newSignedUrl: t.Optional(t.String()),
       }),
     }
   )
@@ -113,15 +115,22 @@ export const productsController = new Elysia({ prefix: "/products" })
 
       const product = await updateProductUC.execute(
         params.id,
-        updateData,
+        {
+          ...updateData,
+          attachWithFileExtension: body.attachWithFileExtension ?? undefined,
+        },
         productRepo
       );
       return {
-        ...product,
-        price: product.price,
-        originalPrice: product.originalPrice
-          ? product.originalPrice
-          : undefined,
+        product: {
+          ...product.product,
+          price: product.product.price,
+          originalPrice: product.product.originalPrice
+            ? product.product.originalPrice
+            : undefined,
+        },
+        uploadUrl: product.uploadUrl,
+        newSignedUrl: product.newSignedUrl,
       };
     },
     {
@@ -129,7 +138,11 @@ export const productsController = new Elysia({ prefix: "/products" })
         id: t.String({ format: "uuid" }),
       }),
       body: t.Partial(ProductInputDto),
-      response: ProductDto,
+      response: t.Object({
+        product: ProductDto,
+        uploadUrl: t.Optional(t.String()),
+        newSignedUrl: t.Optional(t.String()),
+      }),
     }
   )
   .delete(

@@ -4,23 +4,50 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../shared/presentation/errors";
+import redis from "@/shared/redis";
+import filehub from "@/shared/filehub";
 
 export class UpdateProductUseCase {
   async execute(
     id: string,
-    data: Partial<Omit<Product, "id">>,
+    data: Partial<Omit<Product, "id">> & { attachWithFileExtension?: string },
     repo: IProductRepository
-  ): Promise<Product> {
+  ): Promise<{ product: Product; uploadUrl?: string; newSignedUrl?: string }> {
     if (Object.keys(data).length === 0) {
-      throw new ValidationError(
-        "At least one field must be provided for update"
-      );
+      throw new ValidationError([
+        {
+          path: "product",
+          message: "At least one field must be provided for update",
+        },
+      ]);
     }
 
     const existing = await repo.findById(id);
     if (!existing) {
-      throw new NotFoundError("Product not found");
+      throw new NotFoundError([
+        { path: "product", message: "Product not found" },
+      ]);
     }
-    return await repo.update(id, data);
+    const product = await repo.update(id, data);
+
+    if (data.attachWithFileExtension) {
+      const upload = await filehub.getSignedPutUrl(
+        3600 * 24 * 7,
+        data.attachWithFileExtension
+      );
+      const newSignedUrl = await filehub.getSignedUrl(upload.filename);
+      await redis.set(
+        `filehub:${upload.filename}`,
+        product.id,
+        "EX",
+        3600 * 24 * 7
+      );
+      return {
+        product,
+        uploadUrl: upload.signedUrl,
+        newSignedUrl: newSignedUrl.signedUrl,
+      };
+    }
+    return { product };
   }
 }

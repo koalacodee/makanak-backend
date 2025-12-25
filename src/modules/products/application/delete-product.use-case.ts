@@ -5,7 +5,9 @@ export class DeleteProductUseCase {
   async execute(id: string, repo: IProductRepository): Promise<void> {
     const existing = await repo.findById(id);
     if (!existing) {
-      throw new NotFoundError("Product not found");
+      throw new NotFoundError([
+        { path: "product", message: "Product not found" },
+      ]);
     }
     await repo.delete(id);
   }
