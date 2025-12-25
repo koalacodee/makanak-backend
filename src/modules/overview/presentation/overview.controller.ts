@@ -8,12 +8,8 @@ export const overviewController = new Elysia({ prefix: "/overview" })
   .use(authGuard(["admin"])) // Only admins can view overview
   .get(
     "/",
-    async ({ getOverviewUC, orderRepo, customerRepo, staffRepo }) => {
-      const overview = await getOverviewUC.execute(
-        orderRepo,
-        customerRepo,
-        staffRepo
-      );
+    async ({ getOverviewUC, overviewRepo }) => {
+      const overview = await getOverviewUC.execute(overviewRepo);
       return overview;
     },
     {
