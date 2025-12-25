@@ -15,16 +15,41 @@ export const ReadyOrderDto = t.Object({
   customerAddress: t.String(),
 });
 
+export const ReadyOrderWithShouldTakeDto = t.Object({
+  id: t.String({ format: "uuid" }),
+  customerName: t.String(),
+  referenceCode: t.Optional(t.String()),
+  phone: t.String(),
+  address: t.String(),
+  orderItems: t.Array(
+    t.Object({
+      id: t.String({ format: "uuid" }),
+      orderId: t.String({ format: "uuid" }),
+      productId: t.String({ format: "uuid" }),
+      quantity: t.Integer(),
+      price: t.Number(),
+      productName: t.String(),
+      productStock: t.Integer(),
+    })
+  ),
+  subtotal: t.Optional(t.Number()),
+  deliveryFee: t.Optional(t.Number()),
+  total: t.Number(),
+  status: OrderStatusEnum,
+  driverId: t.Optional(t.String({ format: "uuid" })),
+  createdAt: t.String({ format: "date-time" }),
+  deliveredAt: t.Optional(t.String({ format: "date-time" })),
+  receiptImage: t.Optional(t.String({ format: "uri" })),
+  paymentMethod: t.Optional(t.Union([t.Literal("cod"), t.Literal("online")])),
+  pointsUsed: t.Optional(t.Integer()),
+  pointsDiscount: t.Optional(t.Number()),
+  date: t.Optional(t.String({ format: "date-time" })),
+  shouldTake: t.Nullable(t.Number()),
+});
+
 export const JoinShiftResponseDto = t.Object({
   success: t.Boolean(),
-  readyOrders: t.Array(
-    t.Intersect([
-      OrderDto,
-      t.Object({
-        shouldTake: t.Nullable(t.Number()),
-      }),
-    ])
-  ),
+  readyOrders: t.Array(ReadyOrderWithShouldTakeDto),
   counts: t.Array(
     t.Object({
       status: OrderStatusEnum,

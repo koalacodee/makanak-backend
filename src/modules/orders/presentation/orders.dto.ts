@@ -53,6 +53,7 @@ export const OrderItemInputDto = t.Object({
 export const OrderInputDto = t.Object({
   customerName: t.String(),
   phone: t.String(),
+  couponName: t.Optional(t.String()),
   password: t.String(),
   address: t.String(),
   items: t.Array(OrderItemInputDto),

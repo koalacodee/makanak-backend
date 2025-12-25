@@ -8,7 +8,6 @@ import {
   OrdersResponseDto,
   AssignOrderToDriverDto,
   ChangeOrderStatusDto,
-  Order,
 } from "./orders.dto";
 import { authGuard } from "../../auth/presentation/auth.guard";
 
@@ -64,6 +63,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       customerRepo,
       settingsRepo,
       upsertCustomerUC,
+      couponRepo,
     }) => {
       const order = await createOrderUC.execute(
         {
@@ -75,12 +75,14 @@ export const ordersController = new Elysia({ prefix: "/orders" })
           pointsToUse: body.pointsToUse,
           attachWithFileExtension: body.attachWithFileExtension,
           password: body.password,
+          couponName: body.couponName,
         },
         orderRepo,
         productRepo,
         upsertCustomerUC,
         settingsRepo,
-        customerRepo
+        customerRepo,
+        couponRepo
       );
 
       return {
