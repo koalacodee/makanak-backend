@@ -15,6 +15,7 @@ import { customersController } from "./modules/customers";
 import { cartController } from "./modules/cart";
 import { driversController } from "./modules/drivers";
 import { overviewController } from "./modules/overview";
+import { couponController } from "./modules/coupons";
 import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
 import openapi from "@elysiajs/openapi";
 import cors from "@elysiajs/cors";
@@ -58,6 +59,7 @@ export const app = new Elysia()
       .use(cartController)
       .use(driversController)
       .use(overviewController)
+      .use(couponController)
       .use(fileHubWebHookController)
       .use(
         openapi({

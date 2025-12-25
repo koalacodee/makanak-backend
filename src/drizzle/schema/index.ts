@@ -12,6 +12,7 @@ export * from "./staffMembers";
 export * from "./attachments";
 export * from "./carts";
 export * from "./cartItems";
+export * from "./coupons";
 
 // Export all relations
 export * from "./relations";
