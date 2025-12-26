@@ -4,6 +4,8 @@ import {
   BadRequestError,
   UnauthorizedError,
   ValidationError,
+  ForbiddenError,
+  TooManyRequestsError,
 } from "./errors";
 
 // Export error definitions for use in app
@@ -12,6 +14,8 @@ export const errorDefinitions = {
   BADREQUEST: BadRequestError,
   UNAUTHORIZED: UnauthorizedError,
   VALIDATION_ERROR: ValidationError,
+  FORBIDDEN: ForbiddenError,
+  TOO_MANY_REQUESTS: TooManyRequestsError,
 };
 
 // Export the onError handler function to be used at root level
@@ -22,6 +26,8 @@ export const onErrorHandler = ({ error, set, code }: any) => {
     error instanceof BadRequestError ||
     error instanceof UnauthorizedError ||
     error instanceof ValidationError ||
+    error instanceof ForbiddenError ||
+    error instanceof TooManyRequestsError ||
     code == "VALIDATION"
   ) {
     return error;
