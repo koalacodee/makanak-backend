@@ -152,17 +152,37 @@ export const driversController = new Elysia({ prefix: "/driver" })
   )
   .post(
     "/mark-order-as-delivered/:orderId",
-    async ({ params, user, markOrderAsDeliveredUC, orderRepo }) => {
+    async ({
+      params,
+      body,
+      user,
+      markOrderAsDeliveredUC,
+      orderRepo,
+      customerRepo,
+      productRepo,
+      couponRepo,
+      changeOrderStatusUC,
+      markAsReadyUC,
+    }) => {
       const result = await markOrderAsDeliveredUC.execute(
         params.orderId,
         user.id,
-        orderRepo
+        body.verificationCode,
+        orderRepo,
+        customerRepo,
+        productRepo,
+        couponRepo,
+        changeOrderStatusUC,
+        markAsReadyUC
       );
       return result;
     },
     {
       params: t.Object({
         orderId: t.String(),
+      }),
+      body: t.Object({
+        verificationCode: t.String(),
       }),
       response: SuccessResponseDto,
       user: t.Object({
@@ -185,5 +205,45 @@ export const driversController = new Elysia({ prefix: "/driver" })
         orderId: t.String(),
       }),
       response: MarkAsReadyResponseDto,
+    }
+  )
+  .post(
+    "/cancel-order/:orderId",
+    async ({
+      params,
+      body,
+      user,
+      cancelOrderUC,
+      orderRepo,
+      productRepo,
+      couponRepo,
+      customerRepo,
+      changeOrderStatusUC,
+      markAsReadyUC,
+    }) => {
+      const result = await cancelOrderUC.execute(
+        params.orderId,
+        user.id,
+        body.cancellationReason,
+        orderRepo,
+        productRepo,
+        couponRepo,
+        customerRepo,
+        changeOrderStatusUC,
+        markAsReadyUC
+      );
+      return result;
+    },
+    {
+      params: t.Object({
+        orderId: t.String(),
+      }),
+      body: t.Object({
+        cancellationReason: t.String({ minLength: 1 }),
+      }),
+      response: SuccessResponseDto,
+      user: t.Object({
+        id: t.String(),
+      }),
     }
   );

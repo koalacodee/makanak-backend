@@ -9,7 +9,7 @@ import { driverSocketService } from "@/modules/drivers/infrastructure/driver-soc
 
 export class ChangeOrderStatusUseCase {
   async execute(
-    data: { id: string; status: OrderStatus },
+    data: { id: string; status: OrderStatus; cancellationReason?: string },
     orderRepo: IOrderRepository,
     customerRepo: ICustomerRepository,
     productRepo: IProductRepository,
@@ -43,18 +43,20 @@ export class ChangeOrderStatusUseCase {
       await this.handleDeliveredStatus(existing, customerRepo);
     } else if (newStatus === "cancelled" && previousStatus !== "cancelled") {
       // When order is cancelled: restore everything based on what was already done
-      await this.handleCancelledStatus(
-        existing,
+      await this.handleCancelledStatus({
+        order: existing,
         previousStatus,
-        productRepo,
         couponRepo,
-        customerRepo
-      );
+        productRepo,
+        customerRepo,
+      });
     }
 
     return await orderRepo.update(data.id, {
       status: data.status,
       deliveredAt: data.status === "delivered" ? new Date() : undefined,
+      cancellationReason:
+        data.status === "cancelled" ? data.cancellationReason : undefined,
     });
   }
 
@@ -129,13 +131,19 @@ export class ChangeOrderStatusUseCase {
    * - If order was "ready" or beyond: restore stock, restore coupon usage, restore points
    * - If order was "delivered": also revert totalSpent and totalOrders
    */
-  private async handleCancelledStatus(
-    order: Order,
-    previousStatus: OrderStatus,
-    productRepo: IProductRepository,
-    couponRepo: ICouponRepository,
-    customerRepo: ICustomerRepository
-  ): Promise<void> {
+  private async handleCancelledStatus({
+    order,
+    previousStatus,
+    couponRepo,
+    productRepo,
+    customerRepo,
+  }: {
+    order: Order;
+    previousStatus: OrderStatus;
+    couponRepo: ICouponRepository;
+    productRepo: IProductRepository;
+    customerRepo: ICustomerRepository;
+  }): Promise<void> {
     const wasReadyOrBeyond =
       previousStatus === "ready" ||
       previousStatus === "out_for_delivery" ||
