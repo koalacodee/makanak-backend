@@ -93,6 +93,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
             ? parseFloat(order.order.pointsDiscount)
             : undefined,
         },
+        verificationCode: order.verificationCode,
       };
     },
     {
@@ -100,6 +101,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       response: t.Object({
         order: OrderDto,
         receiptUploadUrl: t.Optional(t.String()),
+        verificationCode: t.String(),
       }),
     }
   )

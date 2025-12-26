@@ -23,6 +23,10 @@ export interface IOrderRepository {
     pointsEarned?: number;
     couponDiscount?: number;
     couponId?: string;
+    cancellationReason?: string;
+    cancelledAt?: Date;
+    cancelledBy?: "driver" | "inventory";
+    verificationHash?: string;
   }): Promise<Order>;
   update(
     id: string,
@@ -30,6 +34,10 @@ export interface IOrderRepository {
       status?: OrderStatus;
       driverId?: string;
       deliveredAt?: Date;
+      cancellationReason?: string;
+      cancelledAt?: Date;
+      cancelledBy?: "driver" | "inventory";
+      verificationHash?: string;
     }
   ): Promise<Order>;
   getReadyOrdersForDriver(driverId: string): Promise<{

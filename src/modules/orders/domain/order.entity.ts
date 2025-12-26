@@ -38,6 +38,10 @@ export interface Order {
   pointsEarned?: number;
   couponDiscount?: number;
   couponId?: string;
+  cancellationReason?: string;
+  cancelledAt?: Date;
+  cancelledBy?: "driver" | "inventory";
+  verificationHash?: string;
   // Legacy fields
   date?: string;
   timestamp?: number | null;

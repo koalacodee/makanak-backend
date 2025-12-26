@@ -116,6 +116,10 @@ export class OrderRepository implements IOrderRepository {
     pointsEarned?: number;
     couponDiscount?: number;
     couponId?: string;
+    cancellationReason?: string;
+    cancelledAt?: Date;
+    cancelledBy?: "driver" | "inventory";
+    verificationHash?: string;
   }): Promise<Order> {
     const orderId = Bun.randomUUIDv7();
 
@@ -150,6 +154,10 @@ export class OrderRepository implements IOrderRepository {
           pointsEarned: data.pointsEarned || 0,
           couponDiscount: data.couponDiscount || 0,
           couponId: data.couponId || null,
+          cancellationReason: data.cancellationReason || null,
+          cancelledAt: data.cancelledAt || undefined,
+          cancelledBy: data.cancelledBy || undefined,
+          verificationHash: data.verificationHash || undefined,
         })
         .returning();
 
@@ -212,6 +220,10 @@ export class OrderRepository implements IOrderRepository {
       status?: OrderStatus;
       driverId?: string;
       deliveredAt?: Date;
+      cancellationReason?: string;
+      cancelledAt?: Date;
+      cancelledBy?: "driver" | "inventory";
+      verificationHash?: string;
     }
   ): Promise<Order> {
     const updateData: Partial<typeof orders.$inferInsert> = {};
@@ -219,7 +231,14 @@ export class OrderRepository implements IOrderRepository {
     if (data.driverId !== undefined) updateData.driverId = data.driverId;
     if (data.deliveredAt !== undefined)
       updateData.deliveredAt = data.deliveredAt;
-
+    if (data.cancellationReason !== undefined)
+      updateData.cancellationReason = data.cancellationReason;
+    if (data.cancelledAt !== undefined)
+      updateData.cancelledAt = data.cancelledAt;
+    if (data.cancelledBy !== undefined)
+      updateData.cancelledBy = data.cancelledBy;
+    if (data.verificationHash !== undefined)
+      updateData.verificationHash = data.verificationHash;
     // If status is delivered, set deliveredAt
     if (data.status === "delivered") {
       updateData.deliveredAt = new Date();
@@ -284,6 +303,10 @@ export class OrderRepository implements IOrderRepository {
       date: row.date ? row.date.toISOString() : undefined,
       timestamp: row.timestamp || null,
       deliveryTimestamp: row.deliveryTimestamp || null,
+      cancellationReason: row.cancellationReason || undefined,
+      cancelledAt: row.cancelledAt || undefined,
+      cancelledBy: row.cancelledBy || undefined,
+      verificationHash: row.verificationHash || undefined,
     };
   }
 

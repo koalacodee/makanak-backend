@@ -9,6 +9,7 @@ import redis from "@/shared/redis";
 import crypto from "crypto";
 import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
 import { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
+import { generateCodeAndHash } from "@/shared/helpers/hash";
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -28,7 +29,11 @@ export class CreateOrderUseCase {
     settingsRepo: ISettingsRepository,
     customerRepo: ICustomerRepository,
     couponRepo: ICouponRepository
-  ): Promise<{ order: Order; receiptUploadUrl?: string }> {
+  ): Promise<{
+    order: Order;
+    receiptUploadUrl?: string;
+    verificationCode: string;
+  }> {
     let couponDiscount: number | null = null;
     let couponData: { remainingUses: number; id: string } | null = null;
     if (data.couponName) {
@@ -143,6 +148,7 @@ export class CreateOrderUseCase {
     const pointsToEarn =
       earnValue && earnValue > 0 ? Math.floor(totalAmount / earnValue) : 0;
     // Create order
+    const { code, hash } = generateCodeAndHash();
     const order = await orderRepo.create({
       customerName: data.customerName,
       referenceCode: crypto.randomInt(10000000, 99999999).toString(),
@@ -160,6 +166,7 @@ export class CreateOrderUseCase {
       pointsEarned: pointsToEarn,
       couponDiscount: couponDiscount ?? 0,
       couponId: couponData?.id ?? undefined,
+      verificationHash: hash,
     });
 
     let receiptUploadUrl: SignedPutUrl | null = null;
@@ -187,6 +194,10 @@ export class CreateOrderUseCase {
     // No side effects on order creation - all effects happen when status changes
     // Stock, points, customer stats, and coupon usage will be handled when order becomes "ready"
 
-    return { order, receiptUploadUrl: receiptUploadUrl?.signedUrl };
+    return {
+      order,
+      receiptUploadUrl: receiptUploadUrl?.signedUrl,
+      verificationCode: code,
+    };
   }
 }
