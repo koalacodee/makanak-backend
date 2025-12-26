@@ -44,6 +44,8 @@ export class SettingsRepository implements ISettingsRepository {
         buttonText: data.promo?.buttonText ?? undefined,
       },
       content: data.content || null,
+      driverCancellationReasons: data.driverCancellationReasons || null,
+      inventoryCancellationReasons: data.inventoryCancellationReasons || null,
     };
 
     const [result] = await this.database
@@ -96,6 +98,11 @@ export class SettingsRepository implements ISettingsRepository {
           data.promo?.buttonText ?? existing?.promo?.buttonText ?? undefined,
       };
     if (data.content !== undefined) updateData.content = data.content;
+    if (data.driverCancellationReasons !== undefined)
+      updateData.driverCancellationReasons = data.driverCancellationReasons;
+    if (data.inventoryCancellationReasons !== undefined)
+      updateData.inventoryCancellationReasons =
+        data.inventoryCancellationReasons;
     updateData.updatedAt = new Date();
 
     if (existing) {
@@ -122,6 +129,8 @@ export class SettingsRepository implements ISettingsRepository {
       paymentInfo: row.paymentInfo || null,
       promo: row.promo || null,
       content: row.content || null,
+      driverCancellationReasons: row.driverCancellationReasons || null,
+      inventoryCancellationReasons: row.inventoryCancellationReasons || null,
       createdAt: row.createdAt || new Date(),
       updatedAt: row.updatedAt || new Date(),
     };

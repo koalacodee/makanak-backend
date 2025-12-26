@@ -101,6 +101,8 @@ export interface StoreSettings {
   paymentInfo: PaymentInfo | null;
   promo: Promo | null;
   content: Content | null;
+  driverCancellationReasons: string[] | null;
+  inventoryCancellationReasons: string[] | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -113,4 +115,6 @@ export interface StoreSettingsInput {
   paymentInfo?: PaymentInfo;
   promo?: PromoInput;
   content?: Content;
+  driverCancellationReasons?: string[];
+  inventoryCancellationReasons?: string[];
 }

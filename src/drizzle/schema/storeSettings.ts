@@ -67,6 +67,12 @@ export const storeSettings = pgTable("store_settings", {
       };
     };
   }>(),
+  driverCancellationReasons: jsonb("driver_cancellation_reasons").$type<
+    string[]
+  >(),
+  inventoryCancellationReasons: jsonb("inventory_cancellation_reasons").$type<
+    string[]
+  >(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

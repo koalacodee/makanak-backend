@@ -92,6 +92,8 @@ export const StoreSettingsDto = t.Object({
   paymentInfo: PaymentInfoDto,
   promo: PromoDto,
   content: ContentDto,
+  driverCancellationReasons: t.Optional(t.Array(t.String())),
+  inventoryCancellationReasons: t.Optional(t.Array(t.String())),
 });
 
 export type StoreSettings = Static<typeof StoreSettingsDto>;

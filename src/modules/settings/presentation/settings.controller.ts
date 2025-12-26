@@ -21,6 +21,8 @@ export const settingsController = new Elysia({ prefix: "/settings" })
           paymentInfo: {},
           promo: {},
           content: {},
+          driverCancellationReasons: [],
+          inventoryCancellationReasons: [],
         };
       }
 
@@ -32,6 +34,9 @@ export const settingsController = new Elysia({ prefix: "/settings" })
         paymentInfo: settings.paymentInfo || {},
         promo: settings.promo || {},
         content: settings.content || {},
+        driverCancellationReasons: settings.driverCancellationReasons || [],
+        inventoryCancellationReasons:
+          settings.inventoryCancellationReasons || [],
       };
     },
     {
@@ -55,6 +60,11 @@ export const settingsController = new Elysia({ prefix: "/settings" })
         updateData.paymentInfo = body.paymentInfo;
       if (body.promo !== undefined) updateData.promo = body.promo;
       if (body.content !== undefined) updateData.content = body.content;
+      if (body.driverCancellationReasons !== undefined)
+        updateData.driverCancellationReasons = body.driverCancellationReasons;
+      if (body.inventoryCancellationReasons !== undefined)
+        updateData.inventoryCancellationReasons =
+          body.inventoryCancellationReasons;
 
       const settings = await updateSettingsUC.execute(updateData, settingsRepo);
 
@@ -66,6 +76,9 @@ export const settingsController = new Elysia({ prefix: "/settings" })
         paymentInfo: settings.paymentInfo || {},
         promo: settings.promo || {},
         content: settings.content || {},
+        driverCancellationReasons: settings.driverCancellationReasons || [],
+        inventoryCancellationReasons:
+          settings.inventoryCancellationReasons || [],
       };
     },
     {
