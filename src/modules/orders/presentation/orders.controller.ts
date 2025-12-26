@@ -8,6 +8,7 @@ import {
   OrdersResponseDto,
   AssignOrderToDriverDto,
   ChangeOrderStatusDto,
+  CancelOrderByInventoryDto,
 } from "./orders.dto";
 import { authGuard } from "../../auth/presentation/auth.guard";
 
@@ -244,5 +245,26 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       }),
       body: ChangeOrderStatusDto,
       response: OrderDto,
+    }
+  )
+  .use(authGuard(["inventory"]))
+  .post(
+    "/:id/cancel-by-inventory",
+    async ({ params, body, cancelOrderByInventoryUC, orderRepo }) => {
+      const result = await cancelOrderByInventoryUC.execute(
+        params.id,
+        body.cancellationReason,
+        orderRepo
+      );
+      return result;
+    },
+    {
+      params: t.Object({
+        id: t.String({ format: "uuid" }),
+      }),
+      body: CancelOrderByInventoryDto,
+      response: t.Object({
+        success: t.Boolean(),
+      }),
     }
   );

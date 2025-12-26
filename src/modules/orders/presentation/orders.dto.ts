@@ -84,6 +84,10 @@ export const ChangeOrderStatusDto = t.Object({
   status: OrderStatusEnum,
 });
 
+export const CancelOrderByInventoryDto = t.Object({
+  cancellationReason: t.String({ minLength: 1 }),
+});
+
 export const PaginationDto = t.Object({
   page: t.Integer(),
   limit: t.Integer(),
@@ -102,3 +106,4 @@ export type OrderUpdate = Static<typeof OrderUpdateDto>;
 export type OrderQuery = Static<typeof OrderQueryDto>;
 export type AssignOrderToDriver = Static<typeof AssignOrderToDriverDto>;
 export type ChangeOrderStatus = Static<typeof ChangeOrderStatusDto>;
+export type CancelOrderByInventory = Static<typeof CancelOrderByInventoryDto>;
