@@ -29,7 +29,11 @@ export class ChangeOrderStatusUseCase {
     const newStatus = data.status;
 
     // Handle status transitions
-    if (newStatus === "ready" && previousStatus !== "ready") {
+    if (
+      (newStatus === "ready" || newStatus === "out_for_delivery") &&
+      previousStatus !== "ready" &&
+      previousStatus !== "out_for_delivery"
+    ) {
       // When order becomes ready: reduce stock, reduce coupon usage, reduce points
       await this.handleReadyStatus(
         existing,
