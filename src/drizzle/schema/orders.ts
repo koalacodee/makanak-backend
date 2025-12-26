@@ -6,8 +6,11 @@ import {
   timestamp,
   integer,
   index,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+
+export const cancelledByEnum = pgEnum("cancelled_by", ["driver", "inventory"]);
 
 export const orders = pgTable(
   "orders",
@@ -50,6 +53,10 @@ export const orders = pgTable(
       precision: 10,
       scale: 2,
     }).default("0"),
+    cancellationReason: varchar("cancellation_reason", { length: 255 }),
+    cancelledAt: timestamp("cancelled_at"),
+    cancelledBy: cancelledByEnum("cancelled_by"),
+    verificationHash: varchar("verification_hash", { length: 255 }),
     // Legacy fields for backward compatibility
     date: timestamp("date").defaultNow(),
     timestamp: integer("timestamp").$default(
