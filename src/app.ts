@@ -19,6 +19,8 @@ import { couponController } from "./modules/coupons";
 import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
 import openapi from "@elysiajs/openapi";
 import cors from "@elysiajs/cors";
+import { rateLimit } from "elysia-rate-limit";
+import { RedisContext } from "./shared/rate-limit";
 
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS
@@ -36,10 +38,15 @@ export const app = new Elysia()
         if (!origin) return false;
         return allowedOrigins.includes(origin) || allowedOrigins.includes("*");
       },
-      // methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-      // allowedHeaders: ["Content-Type", "Authorization"],
     })
   )
+  // .use(
+  //   rateLimit({
+  //     duration: 60 * 1000,
+  //     max: 100,
+  //     context: new RedisContext(),
+  //   })
+  // )
   .get("/", () => ({
     name: "Makanak API",
     version: "1.0.0",
