@@ -2,12 +2,13 @@ import type { IOrderRepository } from "../../orders/domain/orders.iface";
 import redis from "@/shared/redis";
 import { BadRequestError, NotFoundError } from "@/shared/presentation";
 import { DriverSocketService } from "../infrastructure/driver-socket.service";
+import { driversIO } from "@/socket.io";
+import { ChangeOrderStatusUseCase } from "@/modules/orders/application/change-order-status.use-case";
 
 export class MarkAsReadyUseCase {
   async execute(
     orderId: string,
-    orderRepo: IOrderRepository,
-    driverSocketService: DriverSocketService
+    orderRepo: IOrderRepository
   ): Promise<{ success: boolean; driverId?: string }> {
     const order = await orderRepo.findById(orderId);
 
@@ -29,16 +30,32 @@ export class MarkAsReadyUseCase {
 
     if (driverId) {
       // Update order with driverId
-      await orderRepo.update(orderId, { driverId });
-
-      driverSocketService.pushToDriver(driverId, {
-        type: "order_assigned",
-        order: {
-          orderId: order.id,
-          shouldTake: order.paymentMethod === "cod" ? order.total : null,
-          customerName: order.customerName,
-          customerAddress: order.address,
-        },
+      const updatedOrder = await orderRepo.update(orderId, { driverId });
+      const shouldTake =
+        updatedOrder.paymentMethod === "cod" ? updatedOrder.total : null;
+      driversIO.notifyDriverWithReadyOrder(driverId, {
+        id: updatedOrder.id,
+        customerName: updatedOrder.customerName,
+        referenceCode: updatedOrder.referenceCode,
+        phone: updatedOrder.phone,
+        address: updatedOrder.address,
+        orderItems: updatedOrder.orderItems.map((item) => ({
+          id: item.id,
+          orderId: item.orderId,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          productName: item.productName,
+          productStock: item.productStock,
+        })),
+        total: updatedOrder.total,
+        status: "ready",
+        createdAt: updatedOrder.createdAt,
+        deliveredAt: updatedOrder.deliveredAt,
+        date: updatedOrder.date,
+        paymentMethod: updatedOrder.paymentMethod,
+        pointsUsed: updatedOrder.pointsUsed,
+        shouldTake: shouldTake,
       });
 
       return { success: true, driverId: driverId };
@@ -69,8 +86,7 @@ async function assignDriverAtomic() {
       return nil
     end
 
-    -- رجّعه تاني (لسه idle/assigned)
-    redis.call("RPUSH", KEYS[1], driverId)
+    -- Mark driver as busy - do NOT put back in available_drivers
     redis.call("SADD", KEYS[2], driverId)
 
     return driverId

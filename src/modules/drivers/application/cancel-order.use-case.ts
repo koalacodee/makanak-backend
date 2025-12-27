@@ -9,6 +9,7 @@ import {
 } from "@/shared/presentation";
 import { ChangeOrderStatusUseCase } from "@/modules/orders/application/change-order-status.use-case";
 import { MarkAsReadyUseCase } from "./mark-as-ready.use-case";
+import redis from "@/shared/redis";
 
 export class CancelOrderUseCase {
   async execute(
@@ -58,6 +59,10 @@ export class CancelOrderUseCase {
       couponRepo,
       markAsReadyUC
     );
+
+    // Remove driver from busy_drivers and add back to available_drivers
+    await redis.srem("busy_drivers", driverId);
+    await redis.rpush("available_drivers", driverId);
 
     return { success: true };
   }

@@ -67,3 +67,6 @@ export type SuccessResponse = Static<typeof SuccessResponseDto>;
 export type ReadyOrder = Static<typeof ReadyOrderDto>;
 export type JoinShiftResponse = Static<typeof JoinShiftResponseDto>;
 export type MarkAsReadyResponse = Static<typeof MarkAsReadyResponseDto>;
+export type ReadyOrderWithShouldTake = Static<
+  typeof ReadyOrderWithShouldTakeDto
+>;

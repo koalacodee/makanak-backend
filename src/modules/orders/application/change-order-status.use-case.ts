@@ -29,19 +29,15 @@ export class ChangeOrderStatusUseCase {
     const newStatus = data.status;
 
     // Handle status transitions
-    if (
-      (newStatus === "ready" || newStatus === "out_for_delivery") &&
-      previousStatus !== "ready" &&
-      previousStatus !== "out_for_delivery"
-    ) {
+    if (newStatus === "ready" && previousStatus !== "ready") {
       // When order becomes ready: reduce stock, reduce coupon usage, reduce points
-      await this.handleReadyStatus(
+      await ChangeOrderStatusUseCase.handleReadyStatus(
         existing,
         productRepo,
         couponRepo,
         customerRepo
       );
-      await markAsReadyUC.execute(data.id, orderRepo, driverSocketService);
+      await markAsReadyUC.execute(data.id, orderRepo);
     } else if (newStatus === "delivered" && previousStatus !== "delivered") {
       // When order becomes delivered: add points earned, update totalSpent, update totalOrders
       await this.handleDeliveredStatus(existing, customerRepo);
@@ -70,7 +66,7 @@ export class ChangeOrderStatusUseCase {
    * - Reduce coupon usage by 1
    * - Reduce points (if points were used)
    */
-  private async handleReadyStatus(
+  static async handleReadyStatus(
     order: Order,
     productRepo: IProductRepository,
     couponRepo: ICouponRepository,

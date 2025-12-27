@@ -10,6 +10,7 @@ import crypto from "crypto";
 import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
 import { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
 import { generateCodeAndHash } from "@/shared/helpers/hash";
+import { inventoryIO } from "@/socket.io";
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -193,7 +194,15 @@ export class CreateOrderUseCase {
 
     // No side effects on order creation - all effects happen when status changes
     // Stock, points, customer stats, and coupon usage will be handled when order becomes "ready"
-
+    const pendingOrder = await orderRepo.findById(order.id);
+    if (pendingOrder) {
+      inventoryIO.notifyInventoryWithPendingOrder({
+        ...pendingOrder,
+        pointsDiscount: pendingOrder.pointsDiscount
+          ? parseFloat(pendingOrder.pointsDiscount)
+          : 0,
+      });
+    }
     return {
       order,
       receiptUploadUrl: receiptUploadUrl?.signedUrl,
