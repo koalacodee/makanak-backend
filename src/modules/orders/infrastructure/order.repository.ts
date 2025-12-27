@@ -3,6 +3,10 @@ import { orders, orderItems, products } from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { IOrderRepository } from "../domain/orders.iface";
 import type { Order, OrderItem, OrderStatus } from "../domain/order.entity";
+import {
+  QuantityType,
+  UnitOfMeasurement,
+} from "@/modules/products/presentation/products.dto";
 
 export class OrderRepository implements IOrderRepository {
   constructor(private database: typeof db) {}
@@ -49,6 +53,8 @@ export class OrderRepository implements IOrderRepository {
               columns: {
                 name: true,
                 stock: true,
+                quantityType: true,
+                unitOfMeasurement: true,
               },
             },
           },
@@ -61,11 +67,12 @@ export class OrderRepository implements IOrderRepository {
         this.mapToEntity(
           order,
           order.items.map((item) =>
-            this.mapOrderItemToEntity(
-              item,
-              item.product.name,
-              item.product.stock
-            )
+            this.mapOrderItemToEntity(item, {
+              name: item.product.name,
+              stock: parseFloat(item.product.stock),
+              quantityType: item.product.quantityType,
+              unitOfMeasurement: item.product.unitOfMeasurement ?? undefined,
+            })
           )
         )
       ),
@@ -83,6 +90,8 @@ export class OrderRepository implements IOrderRepository {
               columns: {
                 name: true,
                 stock: true,
+                quantityType: true,
+                unitOfMeasurement: true,
               },
             },
           },
@@ -97,7 +106,12 @@ export class OrderRepository implements IOrderRepository {
     return this.mapToEntity(
       result,
       result.items.map((item) =>
-        this.mapOrderItemToEntity(item, item.product.name, item.product.stock)
+        this.mapOrderItemToEntity(item, {
+          name: item.product.name,
+          stock: parseFloat(item.product.stock),
+          quantityType: item.product.quantityType,
+          unitOfMeasurement: item.product.unitOfMeasurement ?? undefined,
+        })
       )
     );
   }
@@ -201,6 +215,9 @@ export class OrderRepository implements IOrderRepository {
           ...row,
           productName: productById.get(row.productId)!.name,
           productStock: productById.get(row.productId)!.stock,
+          quantityType: productById.get(row.productId)!.quantityType,
+          unitOfMeasurement:
+            productById.get(row.productId)!.unitOfMeasurement ?? undefined,
         })),
       };
     });
@@ -209,7 +226,12 @@ export class OrderRepository implements IOrderRepository {
     return this.mapToEntity(
       order.order,
       order.insertedRows.map((row) =>
-        this.mapOrderItemToEntity(row, row.productName, row.productStock)
+        this.mapOrderItemToEntity(row, {
+          name: row.productName,
+          stock: parseFloat(row.productStock),
+          quantityType: row.quantityType,
+          unitOfMeasurement: row.unitOfMeasurement ?? undefined,
+        })
       )
     );
   }
@@ -266,11 +288,12 @@ export class OrderRepository implements IOrderRepository {
       .where(eq(orderItems.orderId, orderId));
 
     return items.map((item) =>
-      this.mapOrderItemToEntity(
-        item.orderItem,
-        item.product.name,
-        item.product.stock
-      )
+      this.mapOrderItemToEntity(item.orderItem, {
+        name: item.product.name,
+        stock: parseFloat(item.product.stock),
+        quantityType: item.product.quantityType,
+        unitOfMeasurement: item.product.unitOfMeasurement ?? undefined,
+      })
     );
   }
 
@@ -311,24 +334,38 @@ export class OrderRepository implements IOrderRepository {
   }
 
   private mapOrderItemToEntity(
-    row: typeof orderItems.$inferSelect,
-    productName: string,
-    productStock: number | string
+    row:
+      | typeof orderItems.$inferSelect
+      | (typeof orderItems.$inferSelect & Record<string, any>),
+    product: {
+      name: string;
+      stock: number;
+      quantityType: QuantityType;
+      unitOfMeasurement?: UnitOfMeasurement;
+    }
   ): OrderItem {
+    // Handle quantity - it's stored as decimal (string) in DB
+    const quantityValue = row.quantity;
+    const parsedQuantity =
+      typeof quantityValue === "string"
+        ? parseFloat(quantityValue)
+        : typeof quantityValue === "number"
+        ? quantityValue
+        : 0;
+
     return {
       id: row.id,
       orderId: row.orderId,
       productId: row.productId,
-      quantity:
-        typeof row.quantity === "string"
-          ? parseFloat(row.quantity)
-          : row.quantity,
+      quantity: isNaN(parsedQuantity) ? 0 : parsedQuantity,
       price: parseFloat(row.price || "0"),
-      productName: productName,
+      productName: product.name,
       productStock:
-        typeof productStock === "string"
-          ? parseInt(productStock, 10)
-          : productStock,
+        typeof product.stock === "string"
+          ? parseInt(product.stock, 10)
+          : product.stock,
+      productQuantityType: product.quantityType,
+      productUnitOfMeasurement: product.unitOfMeasurement,
     };
   }
 
@@ -349,6 +386,8 @@ export class OrderRepository implements IOrderRepository {
               columns: {
                 name: true,
                 stock: true,
+                quantityType: true,
+                unitOfMeasurement: true,
               },
             },
           },
@@ -375,11 +414,12 @@ export class OrderRepository implements IOrderRepository {
         this.mapToEntity(
           row,
           row.items.map((item) =>
-            this.mapOrderItemToEntity(
-              item,
-              item.product.name,
-              item.product.stock
-            )
+            this.mapOrderItemToEntity(item, {
+              name: item.product.name,
+              stock: parseFloat(item.product.stock),
+              quantityType: item.product.quantityType,
+              unitOfMeasurement: item.product.unitOfMeasurement ?? undefined,
+            })
           )
         )
       ),

@@ -1,3 +1,7 @@
+import {
+  QuantityTypeEnum,
+  UnitOfMeasurementEnum,
+} from "@/modules/products/presentation/products.dto";
 import { Static, t } from "elysia";
 
 export const OrderStatusEnum = t.Union([
@@ -22,6 +26,8 @@ export const OrderItemDto = t.Object({
   price: t.Number(),
   productName: t.String(),
   productStock: t.Number(),
+  productQuantityType: QuantityTypeEnum,
+  productUnitOfMeasurement: t.Optional(UnitOfMeasurementEnum),
 });
 
 export const OrderDto = t.Object({

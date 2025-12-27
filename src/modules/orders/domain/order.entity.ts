@@ -1,3 +1,8 @@
+import {
+  QuantityType,
+  UnitOfMeasurement,
+} from "@/modules/products/presentation/products.dto";
+
 export interface OrderItem {
   id: string;
   orderId: string;
@@ -6,6 +11,8 @@ export interface OrderItem {
   price: number;
   productName: string;
   productStock: number;
+  productQuantityType: QuantityType;
+  productUnitOfMeasurement?: UnitOfMeasurement;
 }
 
 export type OrderStatus =

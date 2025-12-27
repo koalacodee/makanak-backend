@@ -59,3 +59,5 @@ export const ProductsResponseDto = t.Object({
 export type Product = Static<typeof ProductDto>;
 export type ProductInput = Static<typeof ProductInputDto>;
 export type ProductQuery = Static<typeof ProductQueryDto>;
+export type QuantityType = Static<typeof QuantityTypeEnum>;
+export type UnitOfMeasurement = Static<typeof UnitOfMeasurementEnum>;
