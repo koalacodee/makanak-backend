@@ -6,7 +6,7 @@ export const orderItems = pgTable(
     id: uuid("id").primaryKey(),
     orderId: uuid("order_id").notNull(),
     productId: uuid("product_id").notNull(),
-    quantity: integer("quantity").notNull(),
+    quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   },
   (table) => [
