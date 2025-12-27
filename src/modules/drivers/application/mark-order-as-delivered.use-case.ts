@@ -67,17 +67,17 @@ export class MarkOrderAsDeliveredUseCase {
     }
 
     // Mark the current order as delivered
-    await changeOrderStatusUC.execute(
+      await changeOrderStatusUC.execute(
       { id: orderId, status: "delivered" },
-      orderRepo,
-      customerRepo,
-      productRepo,
-      couponRepo,
-      markAsReadyUC
-    );
+        orderRepo,
+        customerRepo,
+        productRepo,
+        couponRepo,
+        markAsReadyUC
+      );
 
     // Remove driver from busy_drivers since current order is complete
-    await redis.srem("busy_drivers", driverId);
+      await redis.srem("busy_drivers", driverId);
 
     // Optionally assign a new order to the driver if available
     const result = await assignFirstIdleReadyOrderToFirstIdleDriver();
@@ -86,7 +86,7 @@ export class MarkOrderAsDeliveredUseCase {
       // The order assignment is handled by the assignFirstIdleReadyOrderToFirstIdleDriver function
     }
 
-    return { success: true };
+      return { success: true };
   }
 }
 

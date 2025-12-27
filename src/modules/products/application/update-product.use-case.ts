@@ -28,6 +28,46 @@ export class UpdateProductUseCase {
         { path: "product", message: "Product not found" },
       ]);
     }
+
+    // Determine the effective quantityType and unitOfMeasurement after update
+    const effectiveQuantityType =
+      data.quantityType !== undefined
+        ? data.quantityType
+        : existing.quantityType;
+    const effectiveUnitOfMeasurement =
+      data.unitOfMeasurement !== undefined
+        ? data.unitOfMeasurement
+        : existing.unitOfMeasurement;
+
+    // Validate quantityType and unitOfMeasurement relationship
+    if (effectiveQuantityType === "weight") {
+      if (!effectiveUnitOfMeasurement) {
+        throw new ValidationError([
+          {
+            path: "unitOfMeasurement",
+            message:
+              "unitOfMeasurement is required when quantityType is 'weight'",
+          },
+        ]);
+      }
+    } else if (effectiveQuantityType === "count") {
+      if (
+        effectiveUnitOfMeasurement !== undefined &&
+        effectiveUnitOfMeasurement !== null
+      ) {
+        throw new ValidationError([
+          {
+            path: "unitOfMeasurement",
+            message:
+              "unitOfMeasurement must be null when quantityType is 'count'",
+          },
+        ]);
+      }
+      if (effectiveQuantityType === "count") {
+        data.unitOfMeasurement = null;
+      }
+    }
+
     const product = await repo.update(id, data);
 
     if (data.attachWithFileExtension) {

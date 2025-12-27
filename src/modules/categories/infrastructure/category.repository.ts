@@ -108,10 +108,11 @@ export class CategoryRepository implements ICategoryRepository {
         id: product.id,
         name: product.name,
         price: product.price ? parseFloat(product.price) : 0,
-        unit: product.unit,
         category: product.categoryId,
         description: product.description,
-        stock: product.stock,
+        stock: parseFloat(product.stock),
+        quantityType: product.quantityType,
+        unitOfMeasurement: product.unitOfMeasurement,
       })),
     };
   }

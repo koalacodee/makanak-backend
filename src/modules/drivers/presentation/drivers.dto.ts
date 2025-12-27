@@ -26,10 +26,10 @@ export const ReadyOrderWithShouldTakeDto = t.Object({
       id: t.String({ format: "uuid" }),
       orderId: t.String({ format: "uuid" }),
       productId: t.String({ format: "uuid" }),
-      quantity: t.Integer(),
+      quantity: t.Number(),
       price: t.Number(),
       productName: t.String(),
-      productStock: t.Integer(),
+      productStock: t.Number(),
     })
   ),
   subtotal: t.Optional(t.Number()),

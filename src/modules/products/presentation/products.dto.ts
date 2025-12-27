@@ -1,25 +1,39 @@
-// import { t, Static } from "@sinclair/tbox";
 import { Static, t } from "elysia";
+
+export const QuantityTypeEnum = t.Union([
+  t.Literal("count"),
+  t.Literal("weight"),
+]);
+export const UnitOfMeasurementEnum = t.Union([
+  t.Literal("ton"),
+  t.Literal("kg"),
+  t.Literal("g"),
+  t.Literal("mg"),
+  t.Literal("l"),
+  t.Literal("ml"),
+]);
 export const ProductDto = t.Object({
   id: t.String({ format: "uuid" }),
   name: t.String(),
   price: t.Number(),
-  unit: t.String(),
   category: t.String({ format: "uuid" }),
   description: t.String(),
-  stock: t.Integer(),
+  stock: t.Number(),
   originalPrice: t.Optional(t.Number()),
   image: t.Optional(t.String({ format: "uri" })),
+  quantityType: QuantityTypeEnum,
+  unitOfMeasurement: t.Optional(t.Nullable(UnitOfMeasurementEnum)),
 });
 export const ProductInputDto = t.Object({
   attachWithFileExtension: t.Optional(t.String()),
   name: t.String(),
   price: t.Number(),
-  unit: t.String(),
   category: t.String({ format: "uuid" }),
   description: t.String(),
-  stock: t.Integer(),
+  stock: t.Number(),
   originalPrice: t.Optional(t.Number()),
+  quantityType: QuantityTypeEnum,
+  unitOfMeasurement: t.Optional(t.Nullable(UnitOfMeasurementEnum)),
 });
 
 export const ProductQueryDto = t.Object({

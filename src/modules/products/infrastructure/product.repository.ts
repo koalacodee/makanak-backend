@@ -34,9 +34,9 @@ export class ProductRepository implements IProductRepository {
     }
     if (filters.inStock !== undefined) {
       if (filters.inStock) {
-        conditions.push(gte(products.stock, 1));
+        conditions.push(gte(products.stock, "1"));
       } else {
-        conditions.push(eq(products.stock, 0));
+        conditions.push(eq(products.stock, "0"));
       }
     }
     if (filters.search) {
@@ -102,11 +102,12 @@ export class ProductRepository implements IProductRepository {
         id,
         name: data.name,
         price: data.price.toString(),
-        unit: data.unit,
         categoryId: data.category,
         description: data.description,
-        stock: data.stock,
+        stock: data.stock.toString(),
         originalPrice: data.originalPrice?.toString() || null,
+        quantityType: data.quantityType,
+        unitOfMeasurement: data.unitOfMeasurement ?? null,
       })
       .returning();
 
@@ -120,13 +121,17 @@ export class ProductRepository implements IProductRepository {
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.price !== undefined) updateData.price = data.price;
-    if (data.unit !== undefined) updateData.unit = data.unit;
     if (data.category !== undefined) updateData.categoryId = data.category;
     if (data.description !== undefined)
       updateData.description = data.description;
     if (data.stock !== undefined) updateData.stock = data.stock;
     if (data.originalPrice !== undefined)
       updateData.originalPrice = data.originalPrice;
+    if (data.quantityType !== undefined)
+      updateData.quantityType = data.quantityType;
+    if (data.unitOfMeasurement !== undefined)
+      updateData.unitOfMeasurement =
+        data.unitOfMeasurement === null ? null : data.unitOfMeasurement;
 
     const [result] = await this.database
       .update(products)
@@ -175,11 +180,12 @@ export class ProductRepository implements IProductRepository {
       id: row.id,
       name: row.name,
       price: parseFloat(row.price),
-      unit: row.unit,
       category: row.categoryId,
       description: row.description,
-      stock: row.stock,
+      stock: parseFloat(row.stock),
       originalPrice: row.originalPrice ? parseFloat(row.originalPrice) : null,
+      quantityType: row.quantityType,
+      unitOfMeasurement: row.unitOfMeasurement ?? undefined,
     };
   }
 }

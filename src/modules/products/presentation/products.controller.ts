@@ -69,11 +69,12 @@ export const productsController = new Elysia({ prefix: "/products" })
         {
           name: body.name,
           price: body.price,
-          unit: body.unit,
           category: body.category,
           description: body.description,
           stock: body.stock,
           originalPrice: body.originalPrice,
+          quantityType: body.quantityType,
+          unitOfMeasurement: body.unitOfMeasurement,
         },
         productRepo,
         body.attachWithFileExtension ?? undefined
@@ -105,14 +106,16 @@ export const productsController = new Elysia({ prefix: "/products" })
       const updateData: any = {};
       if (body.name !== undefined) updateData.name = body.name;
       if (body.price !== undefined) updateData.price = body.price.toString();
-      if (body.unit !== undefined) updateData.unit = body.unit;
       if (body.category !== undefined) updateData.category = body.category;
       if (body.description !== undefined)
         updateData.description = body.description;
       if (body.stock !== undefined) updateData.stock = body.stock;
       if (body.originalPrice !== undefined)
         updateData.originalPrice = body.originalPrice.toString();
-
+      if (body.quantityType !== undefined)
+        updateData.quantityType = body.quantityType;
+      if (body.unitOfMeasurement !== undefined)
+        updateData.unitOfMeasurement = body.unitOfMeasurement;
       const product = await updateProductUC.execute(
         params.id,
         {

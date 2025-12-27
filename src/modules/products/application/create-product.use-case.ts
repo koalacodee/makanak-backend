@@ -37,6 +37,32 @@ export class CreateProductUseCase {
       ]);
     }
 
+    // Validate quantityType and unitOfMeasurement relationship
+    if (data.quantityType === "weight") {
+      if (!data.unitOfMeasurement) {
+        throw new ValidationError([
+          {
+            path: "unitOfMeasurement",
+            message:
+              "unitOfMeasurement is required when quantityType is 'weight'",
+          },
+        ]);
+      }
+    } else if (data.quantityType === "count") {
+      if (
+        data.unitOfMeasurement !== undefined &&
+        data.unitOfMeasurement !== null
+      ) {
+        throw new ValidationError([
+          {
+            path: "unitOfMeasurement",
+            message:
+              "unitOfMeasurement must be null when quantityType is 'count'",
+          },
+        ]);
+      }
+    }
+
     const product = await repo.create(data);
 
     if (attachWithFileExtension) {

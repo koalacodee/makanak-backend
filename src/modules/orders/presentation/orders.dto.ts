@@ -18,10 +18,10 @@ export const OrderItemDto = t.Object({
   id: t.String({ format: "uuid" }),
   orderId: t.String({ format: "uuid" }),
   productId: t.String({ format: "uuid" }),
-  quantity: t.Integer(),
+  quantity: t.Number(),
   price: t.Number(),
   productName: t.String(),
-  productStock: t.Integer(),
+  productStock: t.Number(),
 });
 
 export const OrderDto = t.Object({
@@ -47,7 +47,7 @@ export const OrderDto = t.Object({
 
 export const OrderItemInputDto = t.Object({
   id: t.String({ format: "uuid" }),
-  quantity: t.Integer({ minimum: 1 }),
+  quantity: t.Number(),
 });
 
 export const OrderInputDto = t.Object({

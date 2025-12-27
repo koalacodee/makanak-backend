@@ -185,7 +185,7 @@ export class OrderRepository implements IOrderRepository {
         id: Bun.randomUUIDv7(),
         orderId: orderId,
         productId: item.productId,
-        quantity: item.quantity,
+        quantity: item.quantity.toString(),
         price: productById.get(item.productId)!.price ?? "0",
       }));
 
@@ -313,16 +313,22 @@ export class OrderRepository implements IOrderRepository {
   private mapOrderItemToEntity(
     row: typeof orderItems.$inferSelect,
     productName: string,
-    productStock: number
+    productStock: number | string
   ): OrderItem {
     return {
       id: row.id,
       orderId: row.orderId,
       productId: row.productId,
-      quantity: row.quantity,
+      quantity:
+        typeof row.quantity === "string"
+          ? parseFloat(row.quantity)
+          : row.quantity,
       price: parseFloat(row.price || "0"),
       productName: productName,
-      productStock: productStock,
+      productStock:
+        typeof productStock === "string"
+          ? parseInt(productStock, 10)
+          : productStock,
     };
   }
 
