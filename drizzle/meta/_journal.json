@@ -127,6 +127,27 @@
       "when": 1766823349211,
       "tag": "0017_natural_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1766923312948,
+      "tag": "0018_chilly_the_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1766923420355,
+      "tag": "0019_mysterious_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1766927423937,
+      "tag": "0020_brave_earthquake",
+      "breakpoints": true
     }
   ]
 }

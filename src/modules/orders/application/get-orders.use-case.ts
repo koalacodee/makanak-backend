@@ -53,9 +53,15 @@ export class GetOrdersUseCase {
       search: filters.search,
     });
 
-    const attachments = await attachmentRepo.findByTargetIds(
-      result.data.map((order) => order.id)
-    );
+    const targetIds = result.data.map((order) => order.id);
+
+    result.data.forEach((order) => {
+      if (order.cancellation) {
+        targetIds.push(order.cancellation.id);
+      }
+    });
+
+    const attachments = await attachmentRepo.findByTargetIds(targetIds);
 
     const signedUrls =
       attachments.length > 0
@@ -75,6 +81,19 @@ export class GetOrdersUseCase {
         const signedUrl = signedUrls.find(
           (signedUrl) => signedUrl.filename === attachment?.filename
         );
+        if (order.cancellation) {
+          const cancellationAttachment = attachments.find(
+            (attachment) => attachment.targetId === order.cancellation?.id
+          );
+          const cancellationSignedUrl = signedUrls.find(
+            (signedUrl) =>
+              signedUrl.filename === cancellationAttachment?.filename
+          );
+          order.cancellation = {
+            ...order.cancellation,
+            image: cancellationSignedUrl?.signedUrl,
+          };
+        }
         return {
           ...order,
           receiptImage: signedUrl?.signedUrl,

@@ -30,6 +30,16 @@ export const OrderItemDto = t.Object({
   productUnitOfMeasurement: t.Optional(UnitOfMeasurementEnum),
 });
 
+export const OrderCancellationDto = t.Object({
+  id: t.String({ format: "uuid" }),
+  orderId: t.String({ format: "uuid" }),
+  reason: t.Optional(t.String()),
+  createdAt: t.String({ format: "date-time" }),
+  updatedAt: t.String({ format: "date-time" }),
+  cancelledBy: t.Union([t.Literal("driver"), t.Literal("inventory")]),
+  image: t.Optional(t.String({ format: "uri" })),
+});
+
 export const OrderDto = t.Object({
   id: t.String({ format: "uuid" }),
   customerName: t.String(),
@@ -49,6 +59,7 @@ export const OrderDto = t.Object({
   pointsUsed: t.Optional(t.Integer()),
   pointsDiscount: t.Optional(t.Number()),
   date: t.Optional(t.String({ format: "date-time" })),
+  cancellation: t.Optional(OrderCancellationDto),
 });
 
 export const OrderItemInputDto = t.Object({
@@ -88,10 +99,17 @@ export const AssignOrderToDriverDto = t.Object({
 
 export const ChangeOrderStatusDto = t.Object({
   status: OrderStatusEnum,
+  cancellation: t.Object({
+    reason: t.Optional(t.String()),
+    attachWithFileExtension: t.Optional(t.String()),
+  }),
 });
 
 export const CancelOrderByInventoryDto = t.Object({
-  cancellationReason: t.String({ minLength: 1 }),
+  cancellation: t.Object({
+    reason: t.Optional(t.String()),
+    attachWithFileExtension: t.Optional(t.String()),
+  }),
 });
 
 export const PaginationDto = t.Object({

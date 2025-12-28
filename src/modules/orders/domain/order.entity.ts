@@ -15,6 +15,16 @@ export interface OrderItem {
   productUnitOfMeasurement?: UnitOfMeasurement;
 }
 
+export interface OrderCancellation {
+  id: string;
+  orderId: string;
+  reason: string;
+  createdAt: string;
+  updatedAt: string;
+  cancelledBy: "driver" | "inventory";
+  image?: string;
+}
+
 export type OrderStatus =
   | "pending"
   | "processing"
@@ -45,9 +55,7 @@ export interface Order {
   pointsEarned?: number;
   couponDiscount?: number;
   couponId?: string;
-  cancellationReason?: string;
-  cancelledAt?: Date;
-  cancelledBy?: "driver" | "inventory";
+  cancellation?: OrderCancellation;
   verificationHash?: string;
   // Legacy fields
   date?: string;

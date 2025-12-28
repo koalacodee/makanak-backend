@@ -1,4 +1,9 @@
-import { Order, OrderStatus, PaymentMethod } from "./order.entity";
+import {
+  Order,
+  OrderCancellation,
+  OrderStatus,
+  PaymentMethod,
+} from "./order.entity";
 
 export interface IOrderRepository {
   findAll(filters: {
@@ -23,9 +28,7 @@ export interface IOrderRepository {
     pointsEarned?: number;
     couponDiscount?: number;
     couponId?: string;
-    cancellationReason?: string;
-    cancelledAt?: Date;
-    cancelledBy?: "driver" | "inventory";
+    cancellation?: Omit<OrderCancellation, "image">;
     verificationHash?: string;
   }): Promise<Order>;
   update(
@@ -34,9 +37,7 @@ export interface IOrderRepository {
       status?: OrderStatus;
       driverId?: string;
       deliveredAt?: Date;
-      cancellationReason?: string;
-      cancelledAt?: Date;
-      cancelledBy?: "driver" | "inventory";
+      cancellation?: Partial<Omit<OrderCancellation, "image">>;
       verificationHash?: string;
     }
   ): Promise<Order>;
@@ -45,4 +46,9 @@ export interface IOrderRepository {
     counts: { status: OrderStatus; count: number }[];
   }>;
   count(filters?: { status?: OrderStatus }): Promise<number>;
+  saveCancellation(data: {
+    orderId: string;
+    reason: string;
+    cancelledBy: "driver" | "inventory";
+  }): Promise<OrderCancellation>;
 }

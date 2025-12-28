@@ -1,0 +1,1 @@
+ALTER TABLE "order_cancellation" ADD COLUMN "cancelled_by" "cancelled_by";

@@ -192,12 +192,8 @@ export const driversController = new Elysia({ prefix: "/driver" })
   )
   .post(
     "/mark-as-ready/:orderId",
-    async ({ params, markAsReadyUC, orderRepo, driverSocketService }) => {
-      const result = await markAsReadyUC.execute(
-        params.orderId,
-        orderRepo,
-        driverSocketService
-      );
+    async ({ params, markAsReadyUC, orderRepo }) => {
+      const result = await markAsReadyUC.execute(params.orderId, orderRepo);
       return result;
     },
     {
@@ -224,7 +220,7 @@ export const driversController = new Elysia({ prefix: "/driver" })
       const result = await cancelOrderUC.execute(
         params.orderId,
         user.id,
-        body.cancellationReason,
+        body.cancellation,
         orderRepo,
         productRepo,
         couponRepo,
@@ -232,16 +228,30 @@ export const driversController = new Elysia({ prefix: "/driver" })
         changeOrderStatusUC,
         markAsReadyUC
       );
-      return result;
+      return {
+        order: {
+          ...result.order,
+          pointsDiscount: result.order.pointsDiscount
+            ? parseFloat(result.order.pointsDiscount)
+            : undefined,
+        },
+        cancellationPutUrl: result.cancellationPutUrl,
+      };
     },
     {
       params: t.Object({
         orderId: t.String(),
       }),
       body: t.Object({
-        cancellationReason: t.String({ minLength: 1 }),
+        cancellation: t.Object({
+          reason: t.Optional(t.String()),
+          attachWithFileExtension: t.Optional(t.String()),
+        }),
       }),
-      response: SuccessResponseDto,
+      response: t.Object({
+        order: OrderDto,
+        cancellationPutUrl: t.Optional(t.String()),
+      }),
       user: t.Object({
         id: t.String(),
       }),

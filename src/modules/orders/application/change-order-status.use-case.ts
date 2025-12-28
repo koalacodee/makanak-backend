@@ -5,28 +5,34 @@ import { IProductRepository } from "@/modules/products/domain/products.iface";
 import { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
 import { NotFoundError } from "@/shared/presentation";
 import { MarkAsReadyUseCase } from "@/modules/drivers/application/mark-as-ready.use-case";
-import { driverSocketService } from "@/modules/drivers/infrastructure/driver-socket.service";
+import filehub from "@/shared/filehub";
+import redis from "@/shared/redis";
 
 export class ChangeOrderStatusUseCase {
   async execute(
-    data: { id: string; status: OrderStatus; cancellationReason?: string },
+    data: {
+      id: string;
+      status: OrderStatus;
+      cancellation: { reason?: string; attachWithFileExtension?: string };
+    },
     orderRepo: IOrderRepository,
     customerRepo: ICustomerRepository,
     productRepo: IProductRepository,
     couponRepo: ICouponRepository,
     markAsReadyUC: MarkAsReadyUseCase
-  ): Promise<Order> {
+  ): Promise<{ order: Order; cancellationPutUrl?: string }> {
     const existing = await orderRepo.findById(data.id);
     if (!existing) {
       throw new NotFoundError([{ path: "order", message: "Order not found" }]);
     }
 
     if (existing.status === data.status) {
-      return existing;
+      return { order: existing };
     }
 
     const previousStatus = existing.status;
     const newStatus = data.status;
+    let cancellationPutUrl: string | undefined;
 
     // Handle status transitions
     if (newStatus === "ready" && previousStatus !== "ready") {
@@ -50,14 +56,35 @@ export class ChangeOrderStatusUseCase {
         productRepo,
         customerRepo,
       });
+
+      if (data.cancellation.reason) {
+        const saveCancellation = await orderRepo.saveCancellation({
+          orderId: data.id,
+          reason: data.cancellation.reason,
+          cancelledBy: "inventory",
+        });
+        if (data.cancellation.attachWithFileExtension) {
+          const upload = await filehub.getSignedPutUrl(
+            3600 * 24 * 7,
+            data.cancellation.attachWithFileExtension
+          );
+
+          await redis.set(
+            `filehub:${upload.filename}`,
+            saveCancellation.id,
+            "EX",
+            3600 * 24 * 7
+          );
+          cancellationPutUrl = upload.signedUrl;
+        }
+      }
     }
 
-    return await orderRepo.update(data.id, {
+    const updated = await orderRepo.update(data.id, {
       status: data.status,
       deliveredAt: data.status === "delivered" ? new Date() : undefined,
-      cancellationReason:
-        data.status === "cancelled" ? data.cancellationReason : undefined,
     });
+    return { order: updated, cancellationPutUrl };
   }
 
   /**

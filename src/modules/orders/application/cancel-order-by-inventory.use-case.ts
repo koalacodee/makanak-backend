@@ -1,12 +1,15 @@
 import type { IOrderRepository } from "../domain/orders.iface";
 import { NotFoundError, BadRequestError } from "@/shared/presentation";
+import filehub from "@/shared/filehub";
+import redis from "@/shared/redis";
+import { Order } from "../domain/order.entity";
 
 export class CancelOrderByInventoryUseCase {
   async execute(
     orderId: string,
-    cancellationReason: string,
+    cancellation: { reason?: string; attachWithFileExtension?: string },
     orderRepo: IOrderRepository
-  ): Promise<{ success: boolean }> {
+  ): Promise<{ order: Order; cancellationPutUrl?: string }> {
     const order = await orderRepo.findById(orderId);
 
     if (!order) {
@@ -27,13 +30,33 @@ export class CancelOrderByInventoryUseCase {
 
     // Directly update order to cancelled status without side effects
     // Since the order is pending, nothing was done yet (no stock reduction, no coupon usage, no points deduction)
-    await orderRepo.update(orderId, {
+    const updatedOrder = await orderRepo.update(orderId, {
       status: "cancelled",
-      cancellationReason,
-      cancelledAt: new Date(),
-      cancelledBy: "inventory",
     });
 
-    return { success: true };
+    let cancellationPutUrl: string | undefined;
+
+    if (cancellation.reason) {
+      const saveCancellation = await orderRepo.saveCancellation({
+        orderId: orderId,
+        reason: cancellation.reason,
+        cancelledBy: "inventory",
+      });
+      if (cancellation.attachWithFileExtension) {
+        const upload = await filehub.getSignedPutUrl(
+          3600 * 24 * 7,
+          cancellation.attachWithFileExtension
+        );
+        cancellationPutUrl = upload.signedUrl;
+        await redis.set(
+          `filehub:${upload.filename}`,
+          saveCancellation.id,
+          "EX",
+          3600 * 24 * 7
+        );
+      }
+    }
+
+    return { order: updatedOrder, cancellationPutUrl };
   }
 }

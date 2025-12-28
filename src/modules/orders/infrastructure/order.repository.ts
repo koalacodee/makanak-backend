@@ -1,8 +1,18 @@
 import { eq, and, desc, count, inArray, ilike, or } from "drizzle-orm";
-import { orders, orderItems, products } from "../../../drizzle/schema";
+import {
+  orders,
+  orderItems,
+  products,
+  orderCancellation,
+} from "../../../drizzle/schema";
 import db from "../../../drizzle";
 import type { IOrderRepository } from "../domain/orders.iface";
-import type { Order, OrderItem, OrderStatus } from "../domain/order.entity";
+import type {
+  Order,
+  OrderCancellation,
+  OrderItem,
+  OrderStatus,
+} from "../domain/order.entity";
 import {
   QuantityType,
   UnitOfMeasurement,
@@ -59,6 +69,7 @@ export class OrderRepository implements IOrderRepository {
             },
           },
         },
+        cancellation: true,
       },
     });
 
@@ -73,7 +84,8 @@ export class OrderRepository implements IOrderRepository {
               quantityType: item.product.quantityType,
               unitOfMeasurement: item.product.unitOfMeasurement ?? undefined,
             })
-          )
+          ),
+          order.cancellation
         )
       ),
       total: result.length,
@@ -96,6 +108,7 @@ export class OrderRepository implements IOrderRepository {
             },
           },
         },
+        cancellation: true,
       },
     });
 
@@ -112,7 +125,8 @@ export class OrderRepository implements IOrderRepository {
           quantityType: item.product.quantityType,
           unitOfMeasurement: item.product.unitOfMeasurement ?? undefined,
         })
-      )
+      ),
+      result.cancellation
     );
   }
 
@@ -130,9 +144,7 @@ export class OrderRepository implements IOrderRepository {
     pointsEarned?: number;
     couponDiscount?: number;
     couponId?: string;
-    cancellationReason?: string;
-    cancelledAt?: Date;
-    cancelledBy?: "driver" | "inventory";
+    cancellation?: Omit<OrderCancellation, "image">;
     verificationHash?: string;
   }): Promise<Order> {
     const orderId = Bun.randomUUIDv7();
@@ -168,13 +180,20 @@ export class OrderRepository implements IOrderRepository {
           pointsEarned: data.pointsEarned || 0,
           couponDiscount: data.couponDiscount || 0,
           couponId: data.couponId || null,
-          cancellationReason: data.cancellationReason || null,
-          cancelledAt: data.cancelledAt || undefined,
-          cancelledBy: data.cancelledBy || undefined,
           verificationHash: data.verificationHash || undefined,
         })
         .returning();
 
+      if (data.cancellation) {
+        await tx.insert(orderCancellation).values({
+          id: Bun.randomUUIDv7(),
+          orderId: orderId,
+          reason: data.cancellation.reason,
+          cancelledBy: data.cancellation.cancelledBy,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
       // 1.  Collect the product ids we need
       const productIds = data.items.map((i) => i.productId);
 
@@ -242,23 +261,20 @@ export class OrderRepository implements IOrderRepository {
       status?: OrderStatus;
       driverId?: string;
       deliveredAt?: Date;
-      cancellationReason?: string;
-      cancelledAt?: Date;
-      cancelledBy?: "driver" | "inventory";
+      cancellation?: Partial<Omit<OrderCancellation, "image">>;
       verificationHash?: string;
     }
   ): Promise<Order> {
     const updateData: Partial<typeof orders.$inferInsert> = {};
+    const cancellationData: Partial<typeof orderCancellation.$inferInsert> = {};
     if (data.status !== undefined) updateData.status = data.status;
     if (data.driverId !== undefined) updateData.driverId = data.driverId;
     if (data.deliveredAt !== undefined)
       updateData.deliveredAt = data.deliveredAt;
-    if (data.cancellationReason !== undefined)
-      updateData.cancellationReason = data.cancellationReason;
-    if (data.cancelledAt !== undefined)
-      updateData.cancelledAt = data.cancelledAt;
-    if (data.cancelledBy !== undefined)
-      updateData.cancelledBy = data.cancelledBy;
+    if (data.cancellation?.reason !== undefined)
+      cancellationData.reason = data.cancellation.reason;
+    if (data.cancellation?.cancelledBy !== undefined)
+      cancellationData.cancelledBy = data.cancellation.cancelledBy;
     if (data.verificationHash !== undefined)
       updateData.verificationHash = data.verificationHash;
     // If status is delivered, set deliveredAt
@@ -272,6 +288,16 @@ export class OrderRepository implements IOrderRepository {
       .set(updateData)
       .where(eq(orders.id, id))
       .returning();
+
+    if (cancellationData) {
+      if (cancellationData.reason && cancellationData.cancelledBy) {
+        await this.saveCancellation({
+          orderId: id,
+          reason: cancellationData.reason,
+          cancelledBy: cancellationData.cancelledBy,
+        });
+      }
+    }
 
     const items = await this.fetchOrderItems(id);
     return this.mapToEntity(result, items);
@@ -299,7 +325,8 @@ export class OrderRepository implements IOrderRepository {
 
   private mapToEntity(
     row: typeof orders.$inferSelect,
-    items: OrderItem[]
+    items: OrderItem[],
+    cancellation?: typeof orderCancellation.$inferSelect | null
   ): Order {
     return {
       id: row.id,
@@ -326,9 +353,9 @@ export class OrderRepository implements IOrderRepository {
       date: row.date ? row.date.toISOString() : undefined,
       timestamp: row.timestamp || null,
       deliveryTimestamp: row.deliveryTimestamp || null,
-      cancellationReason: row.cancellationReason || undefined,
-      cancelledAt: row.cancelledAt || undefined,
-      cancelledBy: row.cancelledBy || undefined,
+      cancellation: cancellation
+        ? this.mapCancellationToEntity(cancellation) ?? undefined
+        : undefined,
       verificationHash: row.verificationHash || undefined,
     };
   }
@@ -366,6 +393,20 @@ export class OrderRepository implements IOrderRepository {
           : product.stock,
       productQuantityType: product.quantityType,
       productUnitOfMeasurement: product.unitOfMeasurement,
+    };
+  }
+
+  private mapCancellationToEntity(
+    row: typeof orderCancellation.$inferSelect
+  ): OrderCancellation | null {
+    if (!row) return null;
+    return {
+      id: row.id,
+      orderId: row.orderId || "",
+      reason: row.reason,
+      createdAt: row.createdAt?.toISOString() || "",
+      updatedAt: row.updatedAt?.toISOString() || "",
+      cancelledBy: row.cancelledBy as any,
     };
   }
 
@@ -441,5 +482,33 @@ export class OrderRepository implements IOrderRepository {
       .where(whereClause);
 
     return result[0]?.count || 0;
+  }
+
+  async saveCancellation(data: {
+    orderId: string;
+    reason: string;
+    cancelledBy: "driver" | "inventory";
+  }): Promise<OrderCancellation> {
+    const [result] = await this.database
+      .insert(orderCancellation)
+      .values({
+        id: Bun.randomUUIDv7(),
+        orderId: data.orderId,
+        reason: data.reason,
+        cancelledBy: data.cancelledBy,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [orderCancellation.orderId],
+        set: {
+          reason: data.reason,
+          cancelledBy: data.cancelledBy,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    return this.mapCancellationToEntity(result) as OrderCancellation;
   }
 }

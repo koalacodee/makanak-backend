@@ -45,6 +45,12 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         date: order.date ?? undefined,
         timestamp: order.timestamp ?? undefined,
         deliveryTimestamp: order.deliveryTimestamp ?? undefined,
+        cancellation: order.cancellation
+          ? {
+              ...order.cancellation,
+              image: order.cancellation?.image ?? undefined,
+            }
+          : undefined,
       };
     },
     {
@@ -145,6 +151,12 @@ export const ordersController = new Elysia({ prefix: "/orders" })
             ? parseFloat(order.pointsDiscount)
             : undefined,
           status: order.status,
+          cancellation: order.cancellation
+            ? {
+                ...order.cancellation,
+                image: order.cancellation?.image ?? undefined,
+              }
+            : undefined,
         })),
         pagination: result.pagination,
       };
@@ -209,10 +221,11 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       couponRepo,
       markAsReadyUC,
     }) => {
-      const order = await changeOrderStatusUC.execute(
+      const { order, cancellationPutUrl } = await changeOrderStatusUC.execute(
         {
           id: params.id,
           status: body.status,
+          cancellation: body.cancellation,
         },
         orderRepo,
         customerRepo,
@@ -221,22 +234,25 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         markAsReadyUC
       );
       return {
-        ...order,
-        items: order.orderItems.map((item) => ({
-          ...item,
-          originalPrice: item.price ?? undefined,
-        })),
-        subtotal: order.subtotal ?? undefined,
-        deliveryFee: order.deliveryFee ?? undefined,
-        total: order.total,
-        driverId: order.driverId ?? undefined,
-        createdAt: order.createdAt,
-        deliveredAt: order.deliveredAt ?? undefined,
-        date: order.date ?? undefined,
-        pointsDiscount: order.pointsDiscount
-          ? parseFloat(order.pointsDiscount)
-          : undefined,
-        status: order.status,
+        order: {
+          ...order,
+          items: order.orderItems.map((item) => ({
+            ...item,
+            originalPrice: item.price ?? undefined,
+          })),
+          subtotal: order.subtotal ?? undefined,
+          deliveryFee: order.deliveryFee ?? undefined,
+          total: order.total,
+          driverId: order.driverId ?? undefined,
+          createdAt: order.createdAt,
+          deliveredAt: order.deliveredAt ?? undefined,
+          date: order.date ?? undefined,
+          pointsDiscount: order.pointsDiscount
+            ? parseFloat(order.pointsDiscount)
+            : undefined,
+          status: order.status,
+        },
+        cancellationPutUrl: cancellationPutUrl,
       };
     },
     {
@@ -244,7 +260,10 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         id: t.String({ format: "uuid" }),
       }),
       body: ChangeOrderStatusDto,
-      response: OrderDto,
+      response: t.Object({
+        order: OrderDto,
+        cancellationPutUrl: t.Optional(t.String()),
+      }),
     }
   )
   .use(authGuard(["inventory"]))
@@ -253,10 +272,18 @@ export const ordersController = new Elysia({ prefix: "/orders" })
     async ({ params, body, cancelOrderByInventoryUC, orderRepo }) => {
       const result = await cancelOrderByInventoryUC.execute(
         params.id,
-        body.cancellationReason,
+        body.cancellation,
         orderRepo
       );
-      return result;
+      return {
+        order: {
+          ...result.order,
+          pointsDiscount: result.order.pointsDiscount
+            ? parseFloat(result.order.pointsDiscount)
+            : undefined,
+        },
+        cancellationPutUrl: result.cancellationPutUrl,
+      };
     },
     {
       params: t.Object({
@@ -264,7 +291,8 @@ export const ordersController = new Elysia({ prefix: "/orders" })
       }),
       body: CancelOrderByInventoryDto,
       response: t.Object({
-        success: t.Boolean(),
+        order: OrderDto,
+        cancellationPutUrl: t.Optional(t.String()),
       }),
     }
   );

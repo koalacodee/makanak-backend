@@ -10,19 +10,20 @@ import {
 import { ChangeOrderStatusUseCase } from "@/modules/orders/application/change-order-status.use-case";
 import { MarkAsReadyUseCase } from "./mark-as-ready.use-case";
 import redis from "@/shared/redis";
+import { Order } from "@/modules/orders/domain/order.entity";
 
 export class CancelOrderUseCase {
   async execute(
     orderId: string,
     driverId: string,
-    cancellationReason: string,
+    cancellation: { reason?: string; attachWithFileExtension?: string },
     orderRepo: IOrderRepository,
     productRepo: IProductRepository,
     couponRepo: ICouponRepository,
     customerRepo: ICustomerRepository,
     changeOrderStatusUC: ChangeOrderStatusUseCase,
     markAsReadyUC: MarkAsReadyUseCase
-  ): Promise<{ success: boolean }> {
+  ): Promise<{ order: Order; cancellationPutUrl?: string }> {
     const order = await orderRepo.findById(orderId);
 
     if (!order) {
@@ -51,19 +52,20 @@ export class CancelOrderUseCase {
       ]);
     }
 
-    await changeOrderStatusUC.execute(
-      { id: orderId, status: "cancelled", cancellationReason },
-      orderRepo,
-      customerRepo,
-      productRepo,
-      couponRepo,
-      markAsReadyUC
-    );
+    const { order: savedOrder, cancellationPutUrl } =
+      await changeOrderStatusUC.execute(
+        { id: orderId, status: "cancelled", cancellation },
+        orderRepo,
+        customerRepo,
+        productRepo,
+        couponRepo,
+        markAsReadyUC
+      );
 
     // Remove driver from busy_drivers and add back to available_drivers
     await redis.srem("busy_drivers", driverId);
     await redis.rpush("available_drivers", driverId);
 
-    return { success: true };
+    return { order: savedOrder, cancellationPutUrl };
   }
 }
