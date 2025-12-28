@@ -99,10 +99,12 @@ export const AssignOrderToDriverDto = t.Object({
 
 export const ChangeOrderStatusDto = t.Object({
   status: OrderStatusEnum,
-  cancellation: t.Object({
-    reason: t.Optional(t.String()),
-    attachWithFileExtension: t.Optional(t.String()),
-  }),
+  cancellation: t.Optional(
+    t.Object({
+      reason: t.Optional(t.String()),
+      attachWithFileExtension: t.Optional(t.String()),
+    })
+  ),
 });
 
 export const CancelOrderByInventoryDto = t.Object({

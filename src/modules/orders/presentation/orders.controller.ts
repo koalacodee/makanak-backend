@@ -225,7 +225,7 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         {
           id: params.id,
           status: body.status,
-          cancellation: body.cancellation,
+          cancellation: body.cancellation ?? {},
         },
         orderRepo,
         customerRepo,
