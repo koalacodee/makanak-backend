@@ -90,6 +90,15 @@ export class CustomerRepository implements ICustomerRepository {
     return this.mapToEntity(result);
   }
 
+  async changePassword(phone: string, password: string): Promise<Customer> {
+    const passwordHash = await Bun.password.hash(password, "argon2id");
+    const [result] = await this.database
+      .update(customers)
+      .set({ password: passwordHash })
+      .where(eq(customers.phone, phone))
+      .returning();
+    return this.mapToEntity(result);
+  }
   async upsert(data: CustomerInput): Promise<Customer> {
     const existing = await this.findByPhone(data.phone);
 

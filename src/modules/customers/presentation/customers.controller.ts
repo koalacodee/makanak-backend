@@ -8,6 +8,8 @@ import {
   CustomersListDto,
   GetCustomerDto,
   GetCustomersListQueryDto,
+  ChangeCustomerPasswordDto,
+  ChangeCustomerPasswordResponseDto,
 } from "./customers.dto";
 import { authGuard } from "@/modules/auth";
 
@@ -129,5 +131,31 @@ export const customersController = new Elysia({ prefix: "/customers" })
     {
       response: CustomersListDto,
       query: GetCustomersListQueryDto,
+    }
+  )
+  .patch(
+    "/:phone/password",
+    async ({ params, body, changeCustomerPasswordUC, customerRepo }) => {
+      const customer = await changeCustomerPasswordUC.execute(
+        { phone: params.phone, password: body.password },
+        customerRepo
+      );
+      return {
+        ...customer,
+        name: customer.name ?? undefined,
+        address: customer.address ?? undefined,
+        points: customer.points,
+        totalSpent: customer.totalSpent
+          ? parseFloat(customer.totalSpent)
+          : undefined,
+        totalOrders: customer.totalOrders ?? undefined,
+      };
+    },
+    {
+      params: t.Object({
+        phone: t.String(),
+      }),
+      body: ChangeCustomerPasswordDto,
+      response: ChangeCustomerPasswordResponseDto,
     }
   );

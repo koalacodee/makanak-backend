@@ -9,6 +9,19 @@ export const CustomerDto = t.Object({
   totalOrders: t.Optional(t.Number()),
 });
 
+export const ChangeCustomerPasswordDto = t.Object({
+  phone: t.String(),
+  password: t.String(),
+});
+
+export const ChangeCustomerPasswordResponseDto = t.Object({
+  phone: t.String(),
+  name: t.Optional(t.String()),
+  address: t.Optional(t.String()),
+  points: t.Number(),
+  totalSpent: t.Optional(t.Number()),
+  totalOrders: t.Optional(t.Number()),
+});
 export const GetCustomerDto = t.Object({
   phone: t.String(),
   password: t.String(),
