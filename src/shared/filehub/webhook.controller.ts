@@ -12,6 +12,7 @@ export const fileHubWebHookController = new Elysia({
     if (body.event === "upload_completed") {
       const targetId = await redis.get(`filehub:${body.objectPath}`);
       if (!targetId) {
+        console.error(`Target not found: ${body.objectPath}`);
         // return new Response("Target not found", { status: 404 });
         return;
       }
@@ -20,6 +21,7 @@ export const fileHubWebHookController = new Elysia({
       const targetId = await redis.get(`filehub:${body.upload.uploadKey}`);
       if (!targetId) {
         // return new Response("Target not found", { status: 404 });
+        console.error(`Target not found: ${body.upload.uploadKey}`);
         return;
       }
       await upsertAttachment(
