@@ -69,7 +69,7 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
       response: CategoryWithProductsDto,
     }
   )
-  .use(authGuard(["admin", "inventory"]))
+  .use(authGuard(["admin", "inventory", "cs"]))
   .post(
     "/",
     async ({ body, createCategoryUC, categoryRepo }) => {

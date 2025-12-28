@@ -7,6 +7,7 @@ import {
   ProductQueryDto,
   ProductsResponseDto,
 } from "./products.dto";
+import { authGuard } from "@/modules/auth";
 
 export const productsController = new Elysia({ prefix: "/products" })
   .use(productsModule)
@@ -62,6 +63,7 @@ export const productsController = new Elysia({ prefix: "/products" })
       response: ProductDto,
     }
   )
+  .use(authGuard(["admin", "inventory", "cs"]))
   .post(
     "/",
     async ({ body, createProductUC, productRepo }) => {
