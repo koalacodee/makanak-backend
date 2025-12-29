@@ -16,6 +16,7 @@ describe("DeleteCategoryUseCase", () => {
       create: mock(() => Promise.resolve({} as Category)),
       update: mock(() => Promise.resolve({} as Category)),
       delete: mock(() => Promise.resolve()),
+      findCategoryWithProductsById: mock(() => Promise.resolve(null)),
     };
   });
 
@@ -25,7 +26,6 @@ describe("DeleteCategoryUseCase", () => {
       name: "Category 1",
       icon: "icon-1",
       color: "blue",
-      image: "https://example.com/img1.jpg",
       isHidden: false,
       isLocked: false,
     };
@@ -47,4 +47,3 @@ describe("DeleteCategoryUseCase", () => {
     expect(mockRepo.delete).not.toHaveBeenCalled();
   });
 });
-

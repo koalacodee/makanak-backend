@@ -20,12 +20,12 @@ describe("UpdateCategoryUseCase", () => {
           name: "Updated Category",
           icon: "icon-1",
           color: "blue",
-          image: "https://example.com/img1.jpg",
           isHidden: false,
           isLocked: false,
         })
       ),
       delete: mock(() => Promise.resolve()),
+      findCategoryWithProductsById: mock(() => Promise.resolve(null)),
     };
   });
 
@@ -35,7 +35,6 @@ describe("UpdateCategoryUseCase", () => {
       name: "Category 1",
       icon: "icon-1",
       color: "blue",
-      image: "https://example.com/img1.jpg",
       isHidden: false,
       isLocked: false,
     };
@@ -45,7 +44,7 @@ describe("UpdateCategoryUseCase", () => {
     const updateData = { name: "Updated Category" };
     const result = await useCase.execute("1", updateData, mockRepo);
 
-    expect(result.name).toBe("Updated Category");
+    expect(result.category.name).toBe("Updated Category");
     expect(mockRepo.findById).toHaveBeenCalledWith("1");
     expect(mockRepo.update).toHaveBeenCalledWith("1", updateData);
   });
@@ -65,7 +64,6 @@ describe("UpdateCategoryUseCase", () => {
       name: "Category 1",
       icon: "icon-1",
       color: "blue",
-      image: "https://example.com/img1.jpg",
       isHidden: false,
       isLocked: false,
     };
@@ -83,4 +81,3 @@ describe("UpdateCategoryUseCase", () => {
     expect(mockRepo.update).toHaveBeenCalledWith("1", updateData);
   });
 });
-

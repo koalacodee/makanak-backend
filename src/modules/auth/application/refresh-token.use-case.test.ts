@@ -46,7 +46,6 @@ describe("RefreshTokenUseCase", () => {
 
   it("should refresh tokens successfully", async () => {
     const refreshToken = "valid-refresh-token";
-    const tokenHash = await Bun.password.hash(refreshToken, "argon2id");
 
     const mockUser: User = {
       id: "user-1",
@@ -58,19 +57,7 @@ describe("RefreshTokenUseCase", () => {
       lastLoginAt: new Date(),
     };
 
-    const mockStoredToken: RefreshToken = {
-      id: "token-1",
-      userId: "user-1",
-      tokenHash,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      revoked: false,
-      createdAt: new Date(),
-    };
-
     mockUserRepo.findById = mock(() => Promise.resolve(mockUser));
-    mockRefreshTokenRepo.findByUserId = mock(() =>
-      Promise.resolve([mockStoredToken])
-    );
 
     const result = await useCase.execute(
       refreshToken,
@@ -82,12 +69,18 @@ describe("RefreshTokenUseCase", () => {
 
     expect(result.accessToken).toBe("new-access-token");
     expect(result.refreshToken).toBe("new-refresh-token");
-    expect(mockRefreshTokenRepo.findByUserId).toHaveBeenCalledWith("user-1");
-    expect(mockRefreshTokenRepo.revokeToken).toHaveBeenCalledWith(tokenHash);
-    expect(mockRefreshTokenRepo.create).toHaveBeenCalled();
+    expect(mockUserRepo.findById).toHaveBeenCalledWith("user-1");
+    expect(mockRefreshTokenRepo.revokeToken).toHaveBeenCalledWith(refreshToken);
+    expect(mockRefreshTokenRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        tokenHash: refreshToken,
+        revoked: false,
+      })
+    );
   });
 
-  it("should throw UnauthorizedError when token is invalid", async () => {
+  it("should throw UnauthorizedError when token is invalid (null)", async () => {
     mockRefreshJwt.verify = mock(() => Promise.resolve(null));
 
     await expect(
@@ -101,23 +94,40 @@ describe("RefreshTokenUseCase", () => {
     ).rejects.toThrow(UnauthorizedError);
   });
 
-  it("should throw UnauthorizedError when token not found in database", async () => {
-    const mockUser: User = {
-      id: "user-1",
-      username: "testuser",
-      passwordHash: "hashed-password",
-      role: "admin",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastLoginAt: new Date(),
-    };
-
-    mockUserRepo.findById = mock(() => Promise.resolve(mockUser));
-    mockRefreshTokenRepo.findByUserId = mock(() => Promise.resolve([]));
+  it("should throw UnauthorizedError when token payload is not an object", async () => {
+    mockRefreshJwt.verify = mock(() => Promise.resolve("not-an-object"));
 
     await expect(
       useCase.execute(
-        "token-not-in-db",
+        "invalid-token",
+        mockUserRepo,
+        mockRefreshTokenRepo,
+        mockAccessJwt,
+        mockRefreshJwt
+      )
+    ).rejects.toThrow(UnauthorizedError);
+  });
+
+  it("should throw UnauthorizedError when token payload lacks sub field", async () => {
+    mockRefreshJwt.verify = mock(() => Promise.resolve({ role: "admin" }));
+
+    await expect(
+      useCase.execute(
+        "invalid-token",
+        mockUserRepo,
+        mockRefreshTokenRepo,
+        mockAccessJwt,
+        mockRefreshJwt
+      )
+    ).rejects.toThrow(UnauthorizedError);
+  });
+
+  it("should throw UnauthorizedError when token payload sub is not a string", async () => {
+    mockRefreshJwt.verify = mock(() => Promise.resolve({ sub: 123 }));
+
+    await expect(
+      useCase.execute(
+        "invalid-token",
         mockUserRepo,
         mockRefreshTokenRepo,
         mockAccessJwt,
@@ -128,21 +138,8 @@ describe("RefreshTokenUseCase", () => {
 
   it("should throw UnauthorizedError when user not found", async () => {
     const refreshToken = "valid-refresh-token";
-    const tokenHash = await Bun.password.hash(refreshToken, "argon2id");
-
-    const mockStoredToken: RefreshToken = {
-      id: "token-1",
-      userId: "user-1",
-      tokenHash,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      revoked: false,
-      createdAt: new Date(),
-    };
 
     mockUserRepo.findById = mock(() => Promise.resolve(null));
-    mockRefreshTokenRepo.findByUserId = mock(() =>
-      Promise.resolve([mockStoredToken])
-    );
 
     await expect(
       useCase.execute(
@@ -153,5 +150,6 @@ describe("RefreshTokenUseCase", () => {
         mockRefreshJwt
       )
     ).rejects.toThrow(UnauthorizedError);
+    expect(mockUserRepo.findById).toHaveBeenCalledWith("user-1");
   });
 });
