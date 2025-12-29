@@ -1,18 +1,18 @@
-import { NotFoundError } from "../../../shared/presentation/errors";
-import type { Supplier } from "../domain/supplier.entity";
-import type { ISupplierRepository } from "../domain/suppliers.iface";
+import { NotFoundError } from '../../../shared/presentation/errors'
+import type { Supplier } from '../domain/supplier.entity'
+import type { ISupplierRepository } from '../domain/suppliers.iface'
 
 export class GetSupplierUseCase {
-	async execute(id: string, repo: ISupplierRepository): Promise<Supplier> {
-		const supplier = await repo.findById(id);
-		if (!supplier) {
-			throw new NotFoundError([
-				{
-					path: "supplier",
-					message: "Supplier not found",
-				},
-			]);
-		}
-		return supplier;
-	}
+  async execute(id: string, repo: ISupplierRepository): Promise<Supplier> {
+    const supplier = await repo.findById(id)
+    if (!supplier) {
+      throw new NotFoundError([
+        {
+          path: 'supplier',
+          message: 'Supplier not found',
+        },
+      ])
+    }
+    return supplier
+  }
 }

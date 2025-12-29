@@ -1,153 +1,153 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1765921019031,
-			"tag": "0000_powerful_wildside",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1765928698025,
-			"tag": "0001_broken_dormammu",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "7",
-			"when": 1765941113813,
-			"tag": "0002_oval_colonel_america",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "7",
-			"when": 1765951651873,
-			"tag": "0003_low_shape",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "7",
-			"when": 1766023975090,
-			"tag": "0004_woozy_rage",
-			"breakpoints": true
-		},
-		{
-			"idx": 5,
-			"version": "7",
-			"when": 1766029188581,
-			"tag": "0005_simple_valkyrie",
-			"breakpoints": true
-		},
-		{
-			"idx": 6,
-			"version": "7",
-			"when": 1766121143129,
-			"tag": "0006_remarkable_jigsaw",
-			"breakpoints": true
-		},
-		{
-			"idx": 7,
-			"version": "7",
-			"when": 1766125619144,
-			"tag": "0007_parallel_madame_web",
-			"breakpoints": true
-		},
-		{
-			"idx": 8,
-			"version": "7",
-			"when": 1766239017217,
-			"tag": "0008_fearless_azazel",
-			"breakpoints": true
-		},
-		{
-			"idx": 9,
-			"version": "7",
-			"when": 1766296355669,
-			"tag": "0009_flawless_shocker",
-			"breakpoints": true
-		},
-		{
-			"idx": 10,
-			"version": "7",
-			"when": 1766641896456,
-			"tag": "0010_aberrant_zaladane",
-			"breakpoints": true
-		},
-		{
-			"idx": 11,
-			"version": "7",
-			"when": 1766643250731,
-			"tag": "0011_bored_namor",
-			"breakpoints": true
-		},
-		{
-			"idx": 12,
-			"version": "7",
-			"when": 1766650969429,
-			"tag": "0012_chief_morlun",
-			"breakpoints": true
-		},
-		{
-			"idx": 13,
-			"version": "7",
-			"when": 1766718637425,
-			"tag": "0013_productive_purifiers",
-			"breakpoints": true
-		},
-		{
-			"idx": 14,
-			"version": "7",
-			"when": 1766751595672,
-			"tag": "0014_hot_shockwave",
-			"breakpoints": true
-		},
-		{
-			"idx": 15,
-			"version": "7",
-			"when": 1766805651155,
-			"tag": "0015_overjoyed_roughhouse",
-			"breakpoints": true
-		},
-		{
-			"idx": 16,
-			"version": "7",
-			"when": 1766812466512,
-			"tag": "0016_plain_king_cobra",
-			"breakpoints": true
-		},
-		{
-			"idx": 17,
-			"version": "7",
-			"when": 1766823349211,
-			"tag": "0017_natural_gargoyle",
-			"breakpoints": true
-		},
-		{
-			"idx": 18,
-			"version": "7",
-			"when": 1766923312948,
-			"tag": "0018_chilly_the_order",
-			"breakpoints": true
-		},
-		{
-			"idx": 19,
-			"version": "7",
-			"when": 1766923420355,
-			"tag": "0019_mysterious_eddie_brock",
-			"breakpoints": true
-		},
-		{
-			"idx": 20,
-			"version": "7",
-			"when": 1766927423937,
-			"tag": "0020_brave_earthquake",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1765921019031,
+      "tag": "0000_powerful_wildside",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765928698025,
+      "tag": "0001_broken_dormammu",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765941113813,
+      "tag": "0002_oval_colonel_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1765951651873,
+      "tag": "0003_low_shape",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766023975090,
+      "tag": "0004_woozy_rage",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766029188581,
+      "tag": "0005_simple_valkyrie",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766121143129,
+      "tag": "0006_remarkable_jigsaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766125619144,
+      "tag": "0007_parallel_madame_web",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766239017217,
+      "tag": "0008_fearless_azazel",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1766296355669,
+      "tag": "0009_flawless_shocker",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1766641896456,
+      "tag": "0010_aberrant_zaladane",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1766643250731,
+      "tag": "0011_bored_namor",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1766650969429,
+      "tag": "0012_chief_morlun",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1766718637425,
+      "tag": "0013_productive_purifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1766751595672,
+      "tag": "0014_hot_shockwave",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1766805651155,
+      "tag": "0015_overjoyed_roughhouse",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1766812466512,
+      "tag": "0016_plain_king_cobra",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1766823349211,
+      "tag": "0017_natural_gargoyle",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1766923312948,
+      "tag": "0018_chilly_the_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1766923420355,
+      "tag": "0019_mysterious_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1766927423937,
+      "tag": "0020_brave_earthquake",
+      "breakpoints": true
+    }
+  ]
 }

@@ -1,76 +1,76 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import type { IRefreshTokenRepository } from "../domain/auth.iface";
-import type { RefreshToken } from "../domain/user.entity";
-import { LogoutUseCase } from "./logout.use-case";
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { IRefreshTokenRepository } from '../domain/auth.iface'
+import type { RefreshToken } from '../domain/user.entity'
+import { LogoutUseCase } from './logout.use-case'
 
-describe("LogoutUseCase", () => {
-	let useCase: LogoutUseCase;
-	let mockRefreshTokenRepo: IRefreshTokenRepository;
+describe('LogoutUseCase', () => {
+  let useCase: LogoutUseCase
+  let mockRefreshTokenRepo: IRefreshTokenRepository
 
-	beforeEach(() => {
-		useCase = new LogoutUseCase();
-		mockRefreshTokenRepo = {
-			create: mock(() => Promise.resolve({} as RefreshToken)),
-			findByTokenHash: mock(() => Promise.resolve(null)),
-			findByUserId: mock(() => Promise.resolve([])),
-			revokeToken: mock(() => Promise.resolve()),
-			revokeAllUserTokens: mock(() => Promise.resolve()),
-			deleteExpiredTokens: mock(() => Promise.resolve()),
-		};
-	});
+  beforeEach(() => {
+    useCase = new LogoutUseCase()
+    mockRefreshTokenRepo = {
+      create: mock(() => Promise.resolve({} as RefreshToken)),
+      findByTokenHash: mock(() => Promise.resolve(null)),
+      findByUserId: mock(() => Promise.resolve([])),
+      revokeToken: mock(() => Promise.resolve()),
+      revokeAllUserTokens: mock(() => Promise.resolve()),
+      deleteExpiredTokens: mock(() => Promise.resolve()),
+    }
+  })
 
-	it("should revoke refresh token successfully when found", async () => {
-		const refreshToken = "valid-refresh-token";
-		const tokenHash = await Bun.password.hash(refreshToken, "argon2id");
+  it('should revoke refresh token successfully when found', async () => {
+    const refreshToken = 'valid-refresh-token'
+    const tokenHash = await Bun.password.hash(refreshToken, 'argon2id')
 
-		const mockTokens: RefreshToken[] = [
-			{
-				id: "token-1",
-				userId: "user-1",
-				tokenHash,
-				expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-				revoked: false,
-				createdAt: new Date(),
-			},
-		];
+    const mockTokens: RefreshToken[] = [
+      {
+        id: 'token-1',
+        userId: 'user-1',
+        tokenHash,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        revoked: false,
+        createdAt: new Date(),
+      },
+    ]
 
-		mockRefreshTokenRepo.findByUserId = mock(() => Promise.resolve(mockTokens));
+    mockRefreshTokenRepo.findByUserId = mock(() => Promise.resolve(mockTokens))
 
-		await useCase.execute(refreshToken, "user-1", mockRefreshTokenRepo);
+    await useCase.execute(refreshToken, 'user-1', mockRefreshTokenRepo)
 
-		expect(mockRefreshTokenRepo.findByUserId).toHaveBeenCalledWith("user-1");
-		expect(mockRefreshTokenRepo.revokeToken).toHaveBeenCalledWith(tokenHash);
-	});
+    expect(mockRefreshTokenRepo.findByUserId).toHaveBeenCalledWith('user-1')
+    expect(mockRefreshTokenRepo.revokeToken).toHaveBeenCalledWith(tokenHash)
+  })
 
-	it("should handle logout gracefully when token not found", async () => {
-		const refreshToken = "invalid-refresh-token";
-		const otherTokenHash = await Bun.password.hash("other-token", "argon2id");
+  it('should handle logout gracefully when token not found', async () => {
+    const refreshToken = 'invalid-refresh-token'
+    const otherTokenHash = await Bun.password.hash('other-token', 'argon2id')
 
-		const mockTokens: RefreshToken[] = [
-			{
-				id: "token-1",
-				userId: "user-1",
-				tokenHash: otherTokenHash,
-				expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-				revoked: false,
-				createdAt: new Date(),
-			},
-		];
+    const mockTokens: RefreshToken[] = [
+      {
+        id: 'token-1',
+        userId: 'user-1',
+        tokenHash: otherTokenHash,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        revoked: false,
+        createdAt: new Date(),
+      },
+    ]
 
-		mockRefreshTokenRepo.findByUserId = mock(() => Promise.resolve(mockTokens));
+    mockRefreshTokenRepo.findByUserId = mock(() => Promise.resolve(mockTokens))
 
-		await useCase.execute(refreshToken, "user-1", mockRefreshTokenRepo);
+    await useCase.execute(refreshToken, 'user-1', mockRefreshTokenRepo)
 
-		expect(mockRefreshTokenRepo.findByUserId).toHaveBeenCalledWith("user-1");
-		expect(mockRefreshTokenRepo.revokeToken).not.toHaveBeenCalled();
-	});
+    expect(mockRefreshTokenRepo.findByUserId).toHaveBeenCalledWith('user-1')
+    expect(mockRefreshTokenRepo.revokeToken).not.toHaveBeenCalled()
+  })
 
-	it("should handle empty token list", async () => {
-		mockRefreshTokenRepo.findByUserId = mock(() => Promise.resolve([]));
+  it('should handle empty token list', async () => {
+    mockRefreshTokenRepo.findByUserId = mock(() => Promise.resolve([]))
 
-		await useCase.execute("any-token", "user-1", mockRefreshTokenRepo);
+    await useCase.execute('any-token', 'user-1', mockRefreshTokenRepo)
 
-		expect(mockRefreshTokenRepo.findByUserId).toHaveBeenCalledWith("user-1");
-		expect(mockRefreshTokenRepo.revokeToken).not.toHaveBeenCalled();
-	});
-});
+    expect(mockRefreshTokenRepo.findByUserId).toHaveBeenCalledWith('user-1')
+    expect(mockRefreshTokenRepo.revokeToken).not.toHaveBeenCalled()
+  })
+})

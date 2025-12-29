@@ -1,1 +1,1 @@
-export { couponController } from "./presentation/coupon.controller";
+export { couponController } from './presentation/coupon.controller'

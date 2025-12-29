@@ -1,1 +1,1 @@
-export { categoriesController } from "./presentation/categories.controller";
+export { categoriesController } from './presentation/categories.controller'

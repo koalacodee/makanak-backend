@@ -1,22 +1,22 @@
 {
-	"name": "@makanac/sdk",
-	"version": "1.0.0",
-	"description": "Makanak API SDK powered by ky",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"scripts": {
-		"build": "tsc",
-		"dev": "tsc --watch"
-	},
-	"dependencies": {
-		"ky": "^1.7.2",
-		"js-cookie": "^3.0.5"
-	},
-	"devDependencies": {
-		"@types/js-cookie": "^3.0.5",
-		"typescript": "^5.3.3"
-	},
-	"peerDependencies": {
-		"typescript": "^5.0.0"
-	}
+  "name": "@makanac/sdk",
+  "version": "1.0.0",
+  "description": "Makanak API SDK powered by ky",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "ky": "^1.7.2",
+    "js-cookie": "^3.0.5"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.5",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
 }

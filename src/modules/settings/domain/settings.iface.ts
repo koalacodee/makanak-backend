@@ -1,7 +1,7 @@
-import type { StoreSettings, StoreSettingsInput } from "./settings.entity";
+import type { StoreSettings, StoreSettingsInput } from './settings.entity'
 
 export interface ISettingsRepository {
-	find(): Promise<StoreSettings | null>;
-	create(data: StoreSettingsInput): Promise<StoreSettings>;
-	update(data: StoreSettingsInput): Promise<StoreSettings>;
+  find(): Promise<StoreSettings | null>
+  create(data: StoreSettingsInput): Promise<StoreSettings>
+  update(data: StoreSettingsInput): Promise<StoreSettings>
 }

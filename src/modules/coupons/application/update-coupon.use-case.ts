@@ -1,24 +1,24 @@
-import { NotFoundError } from "../../../shared/presentation/errors";
-import type { Coupon, CouponInput } from "../domain/coupon.entity";
-import type { ICouponRepository } from "../domain/coupon.iface";
+import { NotFoundError } from '../../../shared/presentation/errors'
+import type { Coupon, CouponInput } from '../domain/coupon.entity'
+import type { ICouponRepository } from '../domain/coupon.iface'
 
 export class UpdateCouponUseCase {
-	async execute(
-		id: string,
-		data: Partial<CouponInput>,
-		couponRepo: ICouponRepository,
-	): Promise<Coupon> {
-		// Check if coupon exists
-		const existing = await couponRepo.findById(id);
-		if (!existing) {
-			throw new NotFoundError([
-				{
-					path: "coupon",
-					message: "Coupon not found",
-				},
-			]);
-		}
+  async execute(
+    id: string,
+    data: Partial<CouponInput>,
+    couponRepo: ICouponRepository,
+  ): Promise<Coupon> {
+    // Check if coupon exists
+    const existing = await couponRepo.findById(id)
+    if (!existing) {
+      throw new NotFoundError([
+        {
+          path: 'coupon',
+          message: 'Coupon not found',
+        },
+      ])
+    }
 
-		return await couponRepo.update(id, data);
-	}
+    return await couponRepo.update(id, data)
+  }
 }

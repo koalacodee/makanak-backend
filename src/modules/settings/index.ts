@@ -1,1 +1,1 @@
-export { settingsController } from "./presentation/settings.controller";
+export { settingsController } from './presentation/settings.controller'

@@ -1,49 +1,49 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { NotFoundError } from "../../../shared/presentation/errors";
-import type { ICategoryRepository } from "../domain/categories.iface";
-import type { Category } from "../domain/category.entity";
-import { DeleteCategoryUseCase } from "./delete-category.use-case";
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { NotFoundError } from '../../../shared/presentation/errors'
+import type { ICategoryRepository } from '../domain/categories.iface'
+import type { Category } from '../domain/category.entity'
+import { DeleteCategoryUseCase } from './delete-category.use-case'
 
-describe("DeleteCategoryUseCase", () => {
-	let useCase: DeleteCategoryUseCase;
-	let mockRepo: ICategoryRepository;
+describe('DeleteCategoryUseCase', () => {
+  let useCase: DeleteCategoryUseCase
+  let mockRepo: ICategoryRepository
 
-	beforeEach(() => {
-		useCase = new DeleteCategoryUseCase();
-		mockRepo = {
-			findAll: mock(() => Promise.resolve([])),
-			findById: mock(() => Promise.resolve(null)),
-			create: mock(() => Promise.resolve({} as Category)),
-			update: mock(() => Promise.resolve({} as Category)),
-			delete: mock(() => Promise.resolve()),
-			findCategoryWithProductsById: mock(() => Promise.resolve(null)),
-		};
-	});
+  beforeEach(() => {
+    useCase = new DeleteCategoryUseCase()
+    mockRepo = {
+      findAll: mock(() => Promise.resolve([])),
+      findById: mock(() => Promise.resolve(null)),
+      create: mock(() => Promise.resolve({} as Category)),
+      update: mock(() => Promise.resolve({} as Category)),
+      delete: mock(() => Promise.resolve()),
+      findCategoryWithProductsById: mock(() => Promise.resolve(null)),
+    }
+  })
 
-	it("should delete category successfully", async () => {
-		const existingCategory: Category = {
-			id: "1",
-			name: "Category 1",
-			icon: "icon-1",
-			color: "blue",
-			isHidden: false,
-			isLocked: false,
-		};
+  it('should delete category successfully', async () => {
+    const existingCategory: Category = {
+      id: '1',
+      name: 'Category 1',
+      icon: 'icon-1',
+      color: 'blue',
+      isHidden: false,
+      isLocked: false,
+    }
 
-		mockRepo.findById = mock(() => Promise.resolve(existingCategory));
+    mockRepo.findById = mock(() => Promise.resolve(existingCategory))
 
-		await useCase.execute("1", mockRepo);
+    await useCase.execute('1', mockRepo)
 
-		expect(mockRepo.findById).toHaveBeenCalledWith("1");
-		expect(mockRepo.delete).toHaveBeenCalledWith("1");
-	});
+    expect(mockRepo.findById).toHaveBeenCalledWith('1')
+    expect(mockRepo.delete).toHaveBeenCalledWith('1')
+  })
 
-	it("should throw NotFoundError when category not found", async () => {
-		mockRepo.findById = mock(() => Promise.resolve(null));
+  it('should throw NotFoundError when category not found', async () => {
+    mockRepo.findById = mock(() => Promise.resolve(null))
 
-		await expect(useCase.execute("non-existent", mockRepo)).rejects.toThrow(
-			NotFoundError,
-		);
-		expect(mockRepo.delete).not.toHaveBeenCalled();
-	});
-});
+    await expect(useCase.execute('non-existent', mockRepo)).rejects.toThrow(
+      NotFoundError,
+    )
+    expect(mockRepo.delete).not.toHaveBeenCalled()
+  })
+})

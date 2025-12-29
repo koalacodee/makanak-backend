@@ -1,2063 +1,2063 @@
 {
-	"openapi": "3.0.3",
-	"info": {
-		"title": "Makanak (مكانك) - Grocery E-Commerce API",
-		"description": "API specification for Makanak wholesale grocery delivery platform",
-		"version": "1.0.0",
-		"contact": {
-			"email": "support@makanak.com"
-		}
-	},
-	"servers": [
-		{
-			"url": "https://api.makanak.com/v1",
-			"description": "Production server"
-		},
-		{
-			"url": "http://localhost:3001/v1",
-			"description": "Development server"
-		}
-	],
-	"tags": [
-		{
-			"name": "Products",
-			"description": "Product catalog management"
-		},
-		{
-			"name": "Categories",
-			"description": "Category management"
-		},
-		{
-			"name": "Orders",
-			"description": "Order processing and tracking"
-		},
-		{
-			"name": "Auth",
-			"description": "Authentication and authorization"
-		},
-		{
-			"name": "Staff",
-			"description": "Staff member management"
-		},
-		{
-			"name": "Suppliers",
-			"description": "Supplier management"
-		},
-		{
-			"name": "Settings",
-			"description": "Store settings and configuration"
-		},
-		{
-			"name": "Customers",
-			"description": "Customer management and loyalty points"
-		}
-	],
-	"paths": {
-		"/products": {
-			"get": {
-				"tags": ["Products"],
-				"summary": "Get all products",
-				"description": "Retrieve a list of all products with optional filtering",
-				"parameters": [
-					{
-						"name": "category",
-						"in": "query",
-						"description": "Filter by category ID",
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"name": "inStock",
-						"in": "query",
-						"description": "Filter products that are in stock",
-						"schema": {
-							"type": "boolean"
-						}
-					},
-					{
-						"name": "page",
-						"in": "query",
-						"description": "Page number for pagination",
-						"schema": {
-							"type": "integer",
-							"default": 1
-						}
-					},
-					{
-						"name": "limit",
-						"in": "query",
-						"description": "Number of items per page",
-						"schema": {
-							"type": "integer",
-							"default": 20
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"data": {
-											"type": "array",
-											"items": {
-												"$ref": "#/components/schemas/Product"
-											}
-										},
-										"pagination": {
-											"$ref": "#/components/schemas/Pagination"
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			},
-			"post": {
-				"tags": ["Products"],
-				"summary": "Create a new product",
-				"security": [{ "bearerAuth": [] }],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ProductInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Product created successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Product"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			}
-		},
-		"/products/{id}": {
-			"get": {
-				"tags": ["Products"],
-				"summary": "Get product by ID",
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "integer"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Product"
-								}
-							}
-						}
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"put": {
-				"tags": ["Products"],
-				"summary": "Update product",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "integer"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ProductInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Product updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Product"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"delete": {
-				"tags": ["Products"],
-				"summary": "Delete product",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "integer"
-						}
-					}
-				],
-				"responses": {
-					"204": {
-						"description": "Product deleted successfully"
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		},
-		"/categories": {
-			"get": {
-				"tags": ["Categories"],
-				"summary": "Get all categories",
-				"parameters": [
-					{
-						"name": "includeHidden",
-						"in": "query",
-						"description": "Include hidden categories",
-						"schema": {
-							"type": "boolean",
-							"default": false
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/Category"
-									}
-								}
-							}
-						}
-					}
-				}
-			},
-			"post": {
-				"tags": ["Categories"],
-				"summary": "Create a new category",
-				"security": [{ "bearerAuth": [] }],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CategoryInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Category created successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Category"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			}
-		},
-		"/categories/{id}": {
-			"get": {
-				"tags": ["Categories"],
-				"summary": "Get category by ID",
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Category"
-								}
-							}
-						}
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"put": {
-				"tags": ["Categories"],
-				"summary": "Update category",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CategoryInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Category updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Category"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"delete": {
-				"tags": ["Categories"],
-				"summary": "Delete category",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"204": {
-						"description": "Category deleted successfully"
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		},
-		"/orders": {
-			"get": {
-				"tags": ["Orders"],
-				"summary": "Get all orders",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "status",
-						"in": "query",
-						"description": "Filter by order status",
-						"schema": {
-							"type": "string",
-							"enum": [
-								"pending",
-								"processing",
-								"ready",
-								"out_for_delivery",
-								"delivered",
-								"cancelled"
-							]
-						}
-					},
-					{
-						"name": "driverId",
-						"in": "query",
-						"description": "Filter by assigned driver",
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"name": "page",
-						"in": "query",
-						"schema": {
-							"type": "integer",
-							"default": 1
-						}
-					},
-					{
-						"name": "limit",
-						"in": "query",
-						"schema": {
-							"type": "integer",
-							"default": 20
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"data": {
-											"type": "array",
-											"items": {
-												"$ref": "#/components/schemas/Order"
-											}
-										},
-										"pagination": {
-											"$ref": "#/components/schemas/Pagination"
-										}
-									}
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			},
-			"post": {
-				"tags": ["Orders"],
-				"summary": "Create a new order",
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/OrderInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Order created successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Order"
-								}
-							}
-						}
-					},
-					"400": {
-						"$ref": "#/components/responses/BadRequest"
-					}
-				}
-			}
-		},
-		"/orders/{id}": {
-			"get": {
-				"tags": ["Orders"],
-				"summary": "Get order by ID",
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Order"
-								}
-							}
-						}
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"patch": {
-				"tags": ["Orders"],
-				"summary": "Update order status",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "object",
-								"properties": {
-									"status": {
-										"type": "string",
-										"enum": [
-											"pending",
-											"processing",
-											"ready",
-											"out_for_delivery",
-											"delivered",
-											"cancelled"
-										]
-									},
-									"driverId": {
-										"type": "string"
-									},
-									"receiptImage": {
-										"type": "string",
-										"description": "Base64 encoded receipt image"
-									}
-								}
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Order updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Order"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		},
-		"/auth/login": {
-			"post": {
-				"tags": ["Auth"],
-				"summary": "Staff login",
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "object",
-								"required": ["username", "password"],
-								"properties": {
-									"username": {
-										"type": "string"
-									},
-									"password": {
-										"type": "string",
-										"format": "password"
-									}
-								}
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Login successful",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"token": {
-											"type": "string"
-										},
-										"user": {
-											"$ref": "#/components/schemas/StaffMember"
-										}
-									}
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			}
-		},
-		"/auth/logout": {
-			"post": {
-				"tags": ["Auth"],
-				"summary": "Staff logout",
-				"security": [{ "bearerAuth": [] }],
-				"responses": {
-					"204": {
-						"description": "Logout successful"
-					}
-				}
-			}
-		},
-		"/staff": {
-			"get": {
-				"tags": ["Staff"],
-				"summary": "Get all staff members",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "role",
-						"in": "query",
-						"description": "Filter by role",
-						"schema": {
-							"type": "string",
-							"enum": ["admin", "driver", "cs", "inventory"]
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/StaffMember"
-									}
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			},
-			"post": {
-				"tags": ["Staff"],
-				"summary": "Create a new staff member",
-				"security": [{ "bearerAuth": [] }],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/StaffMemberInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Staff member created successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/StaffMember"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			}
-		},
-		"/staff/{id}": {
-			"get": {
-				"tags": ["Staff"],
-				"summary": "Get staff member by ID",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/StaffMember"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"put": {
-				"tags": ["Staff"],
-				"summary": "Update staff member",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/StaffMemberInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Staff member updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/StaffMember"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"delete": {
-				"tags": ["Staff"],
-				"summary": "Delete staff member",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"204": {
-						"description": "Staff member deleted successfully"
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		},
-		"/staff/{id}/status": {
-			"patch": {
-				"tags": ["Staff"],
-				"summary": "Update driver online status",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "object",
-								"properties": {
-									"isOnline": {
-										"type": "boolean"
-									}
-								}
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Status updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/StaffMember"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		},
-		"/suppliers": {
-			"get": {
-				"tags": ["Suppliers"],
-				"summary": "Get all suppliers",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "status",
-						"in": "query",
-						"description": "Filter by status",
-						"schema": {
-							"type": "string",
-							"enum": ["active", "pending"]
-						}
-					},
-					{
-						"name": "category",
-						"in": "query",
-						"description": "Filter by category",
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/Supplier"
-									}
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			},
-			"post": {
-				"tags": ["Suppliers"],
-				"summary": "Create a new supplier",
-				"security": [{ "bearerAuth": [] }],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/SupplierInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Supplier created successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Supplier"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			}
-		},
-		"/suppliers/{id}": {
-			"get": {
-				"tags": ["Suppliers"],
-				"summary": "Get supplier by ID",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Supplier"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"put": {
-				"tags": ["Suppliers"],
-				"summary": "Update supplier",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/SupplierInput"
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Supplier updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Supplier"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"delete": {
-				"tags": ["Suppliers"],
-				"summary": "Delete supplier",
-				"security": [{ "bearerAuth": [] }],
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"204": {
-						"description": "Supplier deleted successfully"
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		},
-		"/settings": {
-			"get": {
-				"tags": ["Settings"],
-				"summary": "Get store settings",
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/StoreSettings"
-								}
-							}
-						}
-					}
-				}
-			},
-			"put": {
-				"tags": ["Settings"],
-				"summary": "Update store settings",
-				"security": [{ "bearerAuth": [] }],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/StoreSettings"
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Settings updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/StoreSettings"
-								}
-							}
-						}
-					},
-					"401": {
-						"$ref": "#/components/responses/Unauthorized"
-					}
-				}
-			}
-		},
-		"/customers/{phone}": {
-			"get": {
-				"tags": ["Customers"],
-				"summary": "Get customer by phone number",
-				"parameters": [
-					{
-						"name": "phone",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Customer"
-								}
-							}
-						}
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			},
-			"put": {
-				"tags": ["Customers"],
-				"summary": "Create or update customer",
-				"parameters": [
-					{
-						"name": "phone",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/Customer"
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Customer created or updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Customer"
-								}
-							}
-						}
-					}
-				}
-			},
-			"patch": {
-				"tags": ["Customers"],
-				"summary": "Update customer points",
-				"parameters": [
-					{
-						"name": "phone",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "object",
-								"properties": {
-									"points": {
-										"type": "integer",
-										"description": "Set points to this value"
-									},
-									"pointsDelta": {
-										"type": "integer",
-										"description": "Add/subtract this amount from current points"
-									},
-									"name": {
-										"type": "string",
-										"description": "Update customer name"
-									},
-									"address": {
-										"type": "string",
-										"description": "Update customer address"
-									}
-								}
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Customer updated successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Customer"
-								}
-							}
-						}
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		},
-		"/customers/{phone}/points": {
-			"get": {
-				"tags": ["Customers"],
-				"summary": "Get customer loyalty points",
-				"parameters": [
-					{
-						"name": "phone",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successful response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"phone": {
-											"type": "string"
-										},
-										"points": {
-											"type": "integer"
-										},
-										"totalSpent": {
-											"type": "number"
-										},
-										"totalOrders": {
-											"type": "integer"
-										}
-									}
-								}
-							}
-						}
-					},
-					"404": {
-						"$ref": "#/components/responses/NotFound"
-					}
-				}
-			}
-		}
-	},
-	"components": {
-		"schemas": {
-			"Product": {
-				"type": "object",
-				"required": [
-					"id",
-					"name",
-					"price",
-					"unit",
-					"category",
-					"image",
-					"description",
-					"stock"
-				],
-				"properties": {
-					"id": {
-						"type": "integer",
-						"description": "Unique product identifier"
-					},
-					"name": {
-						"type": "string",
-						"description": "Product name in Arabic"
-					},
-					"price": {
-						"type": "number",
-						"format": "float",
-						"description": "Product price in EGP"
-					},
-					"unit": {
-						"type": "string",
-						"description": "Unit of measurement (e.g., كيلو, لتر)"
-					},
-					"category": {
-						"type": "string",
-						"description": "Category ID"
-					},
-					"image": {
-						"type": "string",
-						"format": "uri",
-						"description": "Product image URL"
-					},
-					"description": {
-						"type": "string",
-						"description": "Product description in Arabic"
-					},
-					"stock": {
-						"type": "integer",
-						"description": "Available quantity in stock"
-					},
-					"originalPrice": {
-						"type": "number",
-						"format": "float",
-						"description": "Original price before discount"
-					}
-				}
-			},
-			"ProductInput": {
-				"type": "object",
-				"required": [
-					"name",
-					"price",
-					"unit",
-					"category",
-					"image",
-					"description",
-					"stock"
-				],
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"price": {
-						"type": "number",
-						"format": "float"
-					},
-					"unit": {
-						"type": "string"
-					},
-					"category": {
-						"type": "string"
-					},
-					"image": {
-						"type": "string",
-						"format": "uri"
-					},
-					"description": {
-						"type": "string"
-					},
-					"stock": {
-						"type": "integer"
-					},
-					"originalPrice": {
-						"type": "number",
-						"format": "float"
-					}
-				}
-			},
-			"Category": {
-				"type": "object",
-				"required": ["id", "name", "icon", "color", "image"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"description": "Unique category identifier"
-					},
-					"name": {
-						"type": "string",
-						"description": "Category name in Arabic"
-					},
-					"icon": {
-						"type": "string",
-						"description": "Icon identifier"
-					},
-					"color": {
-						"type": "string",
-						"description": "Tailwind CSS color classes"
-					},
-					"image": {
-						"type": "string",
-						"format": "uri",
-						"description": "Category image URL"
-					},
-					"isHidden": {
-						"type": "boolean",
-						"description": "Whether category is hidden from customers"
-					},
-					"isLocked": {
-						"type": "boolean",
-						"description": "Whether category is locked (coming soon)"
-					}
-				}
-			},
-			"CategoryInput": {
-				"type": "object",
-				"required": ["id", "name", "icon", "color", "image"],
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"name": {
-						"type": "string"
-					},
-					"icon": {
-						"type": "string"
-					},
-					"color": {
-						"type": "string"
-					},
-					"image": {
-						"type": "string",
-						"format": "uri"
-					},
-					"isHidden": {
-						"type": "boolean"
-					},
-					"isLocked": {
-						"type": "boolean"
-					}
-				}
-			},
-			"Order": {
-				"type": "object",
-				"required": [
-					"id",
-					"customerName",
-					"phone",
-					"address",
-					"items",
-					"total",
-					"status",
-					"date"
-				],
-				"properties": {
-					"id": {
-						"type": "string",
-						"description": "Unique order identifier"
-					},
-					"customerName": {
-						"type": "string",
-						"description": "Customer name"
-					},
-					"phone": {
-						"type": "string",
-						"description": "Customer phone number"
-					},
-					"address": {
-						"type": "string",
-						"description": "Delivery address"
-					},
-					"items": {
-						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/CartItem"
-						}
-					},
-					"subtotal": {
-						"type": "number",
-						"format": "float",
-						"description": "Subtotal before delivery fee and discounts"
-					},
-					"deliveryFee": {
-						"type": "number",
-						"format": "float",
-						"description": "Delivery fee in EGP"
-					},
-					"total": {
-						"type": "number",
-						"format": "float",
-						"description": "Total order amount in EGP"
-					},
-					"status": {
-						"type": "string",
-						"enum": [
-							"pending",
-							"processing",
-							"ready",
-							"out_for_delivery",
-							"delivered",
-							"cancelled"
-						]
-					},
-					"driverId": {
-						"type": "string",
-						"description": "Assigned driver ID"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time",
-						"description": "ISO 8601 timestamp when order was created"
-					},
-					"date": {
-						"type": "string",
-						"format": "date-time",
-						"description": "Legacy field - use createdAt instead"
-					},
-					"timestamp": {
-						"type": "integer",
-						"description": "Unix timestamp when order was created (legacy)"
-					},
-					"deliveryTimestamp": {
-						"type": "integer",
-						"description": "Unix timestamp when order was delivered"
-					},
-					"deliveredAt": {
-						"type": "string",
-						"format": "date-time",
-						"description": "ISO 8601 timestamp when order was delivered"
-					},
-					"receiptImage": {
-						"type": "string",
-						"description": "Base64 encoded receipt image or URL"
-					},
-					"paymentMethod": {
-						"type": "string",
-						"enum": ["cod", "online", "wallet"]
-					},
-					"pointsUsed": {
-						"type": "integer",
-						"description": "Loyalty points used for discount"
-					},
-					"pointsDiscount": {
-						"type": "number",
-						"format": "float",
-						"description": "Discount amount from points in EGP"
-					}
-				}
-			},
-			"OrderInput": {
-				"type": "object",
-				"required": [
-					"customerName",
-					"phone",
-					"address",
-					"items",
-					"paymentMethod"
-				],
-				"properties": {
-					"customerName": {
-						"type": "string"
-					},
-					"phone": {
-						"type": "string"
-					},
-					"address": {
-						"type": "string"
-					},
-					"items": {
-						"type": "array",
-						"items": {
-							"type": "object",
-							"required": ["id", "quantity"],
-							"properties": {
-								"id": {
-									"type": "integer"
-								},
-								"quantity": {
-									"type": "integer"
-								}
-							}
-						}
-					},
-					"subtotal": {
-						"type": "number",
-						"format": "float",
-						"description": "Subtotal before delivery fee and discounts"
-					},
-					"deliveryFee": {
-						"type": "number",
-						"format": "float",
-						"description": "Delivery fee in EGP"
-					},
-					"paymentMethod": {
-						"type": "string",
-						"enum": ["cod", "online", "wallet"]
-					},
-					"pointsUsed": {
-						"type": "integer",
-						"description": "Number of points to use for discount"
-					},
-					"pointsDiscount": {
-						"type": "number",
-						"format": "float",
-						"description": "Discount amount from points in EGP"
-					}
-				}
-			},
-			"CartItem": {
-				"allOf": [
-					{
-						"$ref": "#/components/schemas/Product"
-					},
-					{
-						"type": "object",
-						"required": ["quantity"],
-						"properties": {
-							"quantity": {
-								"type": "integer",
-								"description": "Quantity in cart"
-							}
-						}
-					}
-				]
-			},
-			"StaffMember": {
-				"type": "object",
-				"required": ["id", "name", "username", "role"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"description": "Unique staff member identifier"
-					},
-					"name": {
-						"type": "string",
-						"description": "Staff member full name"
-					},
-					"username": {
-						"type": "string",
-						"description": "Login username"
-					},
-					"role": {
-						"type": "string",
-						"enum": ["admin", "driver", "cs", "inventory"]
-					},
-					"phone": {
-						"type": "string",
-						"description": "Phone number (important for drivers)"
-					},
-					"activeOrders": {
-						"type": "integer",
-						"description": "Number of active orders (for drivers)"
-					},
-					"specialization": {
-						"type": "string",
-						"description": "Category specialization (for drivers)"
-					},
-					"isOnline": {
-						"type": "boolean",
-						"description": "Online status (for drivers)"
-					}
-				}
-			},
-			"StaffMemberInput": {
-				"type": "object",
-				"required": ["name", "username", "password", "role"],
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"username": {
-						"type": "string"
-					},
-					"password": {
-						"type": "string",
-						"format": "password"
-					},
-					"role": {
-						"type": "string",
-						"enum": ["admin", "driver", "cs", "inventory"]
-					},
-					"phone": {
-						"type": "string"
-					},
-					"specialization": {
-						"type": "string"
-					}
-				}
-			},
-			"Supplier": {
-				"type": "object",
-				"required": ["id", "name", "phone", "category", "status"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"description": "Unique supplier identifier"
-					},
-					"name": {
-						"type": "string",
-						"description": "Supplier name"
-					},
-					"phone": {
-						"type": "string",
-						"description": "Contact phone number"
-					},
-					"category": {
-						"type": "string",
-						"description": "Category they supply"
-					},
-					"companyName": {
-						"type": "string",
-						"description": "Company name"
-					},
-					"notes": {
-						"type": "string",
-						"description": "Additional notes"
-					},
-					"status": {
-						"type": "string",
-						"enum": ["active", "pending"]
-					}
-				}
-			},
-			"SupplierInput": {
-				"type": "object",
-				"required": ["name", "phone", "category"],
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"phone": {
-						"type": "string"
-					},
-					"category": {
-						"type": "string"
-					},
-					"companyName": {
-						"type": "string"
-					},
-					"notes": {
-						"type": "string"
-					},
-					"status": {
-						"type": "string",
-						"enum": ["active", "pending"],
-						"default": "pending"
-					}
-				}
-			},
-			"StoreSettings": {
-				"type": "object",
-				"required": [
-					"pointsSystem",
-					"deliveryFee",
-					"announcement",
-					"socialMedia",
-					"paymentInfo",
-					"promo",
-					"content"
-				],
-				"properties": {
-					"pointsSystem": {
-						"type": "object",
-						"properties": {
-							"active": {
-								"type": "boolean"
-							},
-							"value": {
-								"type": "number",
-								"description": "Earning rate: Spend X EGP = 1 Point"
-							},
-							"redemptionValue": {
-								"type": "number",
-								"description": "Redemption rate: 1 Point = X EGP"
-							}
-						}
-					},
-					"deliveryFee": {
-						"type": "number",
-						"format": "float"
-					},
-					"announcement": {
-						"type": "object",
-						"properties": {
-							"active": {
-								"type": "boolean"
-							},
-							"message": {
-								"type": "string"
-							}
-						}
-					},
-					"socialMedia": {
-						"type": "object",
-						"properties": {
-							"facebook": {
-								"type": "string"
-							},
-							"instagram": {
-								"type": "string"
-							},
-							"phone": {
-								"type": "string"
-							},
-							"email": {
-								"type": "string",
-								"format": "email"
-							}
-						}
-					},
-					"paymentInfo": {
-						"type": "object",
-						"properties": {
-							"vodafoneCash": {
-								"type": "string"
-							},
-							"instaPay": {
-								"type": "string"
-							}
-						}
-					},
-					"promo": {
-						"type": "object",
-						"properties": {
-							"isActive": {
-								"type": "boolean"
-							},
-							"image": {
-								"type": "string",
-								"format": "uri"
-							},
-							"topBadge": {
-								"type": "string"
-							},
-							"title": {
-								"type": "string"
-							},
-							"description": {
-								"type": "string"
-							},
-							"code": {
-								"type": "string"
-							},
-							"buttonText": {
-								"type": "string"
-							}
-						}
-					},
-					"content": {
-						"type": "object",
-						"properties": {
-							"hero": {
-								"type": "object",
-								"properties": {
-									"badge": {
-										"type": "string"
-									},
-									"titleLine1": {
-										"type": "string"
-									},
-									"titleHighlight": {
-										"type": "string"
-									},
-									"description": {
-										"type": "string"
-									}
-								}
-							},
-							"features": {
-								"type": "array",
-								"items": {
-									"type": "object",
-									"properties": {
-										"title": {
-											"type": "string"
-										},
-										"description": {
-											"type": "string"
-										}
-									}
-								}
-							},
-							"journey": {
-								"type": "object",
-								"properties": {
-									"title": {
-										"type": "string"
-									},
-									"steps": {
-										"type": "array",
-										"items": {
-											"type": "object",
-											"properties": {
-												"title": {
-													"type": "string"
-												},
-												"description": {
-													"type": "string"
-												}
-											}
-										}
-									}
-								}
-							},
-							"sections": {
-								"type": "object",
-								"properties": {
-									"categoriesTitle": {
-										"type": "string"
-									},
-									"categoriesSubtitle": {
-										"type": "string"
-									}
-								}
-							},
-							"info": {
-								"type": "object",
-								"properties": {
-									"terms": {
-										"type": "array",
-										"items": {
-											"type": "object",
-											"properties": {
-												"title": {
-													"type": "string"
-												},
-												"description": {
-													"type": "string"
-												}
-											}
-										}
-									},
-									"quality": {
-										"type": "object",
-										"properties": {
-											"title": {
-												"type": "string"
-											},
-											"description": {
-												"type": "string"
-											},
-											"hotline": {
-												"type": "string"
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			},
-			"Customer": {
-				"type": "object",
-				"required": ["phone"],
-				"properties": {
-					"phone": {
-						"type": "string",
-						"description": "Customer phone number (unique identifier)"
-					},
-					"name": {
-						"type": "string",
-						"description": "Customer full name"
-					},
-					"address": {
-						"type": "string",
-						"description": "Default delivery address"
-					},
-					"points": {
-						"type": "integer",
-						"default": 0,
-						"description": "Loyalty points balance"
-					},
-					"totalSpent": {
-						"type": "number",
-						"format": "float",
-						"description": "Total amount spent across all orders"
-					},
-					"totalOrders": {
-						"type": "integer",
-						"description": "Total number of orders placed"
-					}
-				}
-			},
-			"Pagination": {
-				"type": "object",
-				"properties": {
-					"page": {
-						"type": "integer"
-					},
-					"limit": {
-						"type": "integer"
-					},
-					"total": {
-						"type": "integer"
-					},
-					"totalPages": {
-						"type": "integer"
-					}
-				}
-			},
-			"Error": {
-				"type": "object",
-				"properties": {
-					"error": {
-						"type": "string"
-					},
-					"message": {
-						"type": "string"
-					},
-					"details": {
-						"type": "object"
-					}
-				}
-			}
-		},
-		"responses": {
-			"BadRequest": {
-				"description": "Bad request",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/Error"
-						}
-					}
-				}
-			},
-			"Unauthorized": {
-				"description": "Unauthorized",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/Error"
-						}
-					}
-				}
-			},
-			"NotFound": {
-				"description": "Resource not found",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/Error"
-						}
-					}
-				}
-			}
-		},
-		"securitySchemes": {
-			"bearerAuth": {
-				"type": "http",
-				"scheme": "bearer",
-				"bearerFormat": "JWT"
-			}
-		}
-	}
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Makanak (مكانك) - Grocery E-Commerce API",
+    "description": "API specification for Makanak wholesale grocery delivery platform",
+    "version": "1.0.0",
+    "contact": {
+      "email": "support@makanak.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.makanak.com/v1",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3001/v1",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Products",
+      "description": "Product catalog management"
+    },
+    {
+      "name": "Categories",
+      "description": "Category management"
+    },
+    {
+      "name": "Orders",
+      "description": "Order processing and tracking"
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication and authorization"
+    },
+    {
+      "name": "Staff",
+      "description": "Staff member management"
+    },
+    {
+      "name": "Suppliers",
+      "description": "Supplier management"
+    },
+    {
+      "name": "Settings",
+      "description": "Store settings and configuration"
+    },
+    {
+      "name": "Customers",
+      "description": "Customer management and loyalty points"
+    }
+  ],
+  "paths": {
+    "/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get all products",
+        "description": "Retrieve a list of all products with optional filtering",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inStock",
+            "in": "query",
+            "description": "Filter products that are in stock",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Create a new product",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get product by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Update product",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Delete product",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Product deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Get all categories",
+        "parameters": [
+          {
+            "name": "includeHidden",
+            "in": "query",
+            "description": "Include hidden categories",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Create a new category",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Get category by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Categories"],
+        "summary": "Update category",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Delete category",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Category deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get all orders",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by order status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processing",
+                "ready",
+                "out_for_delivery",
+                "delivered",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "driverId",
+            "in": "query",
+            "description": "Filter by assigned driver",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create a new order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get order by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Orders"],
+        "summary": "Update order status",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "processing",
+                      "ready",
+                      "out_for_delivery",
+                      "delivered",
+                      "cancelled"
+                    ]
+                  },
+                  "driverId": {
+                    "type": "string"
+                  },
+                  "receiptImage": {
+                    "type": "string",
+                    "description": "Base64 encoded receipt image"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Staff login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/StaffMember"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Staff logout",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": {
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/staff": {
+      "get": {
+        "tags": ["Staff"],
+        "summary": "Get all staff members",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "description": "Filter by role",
+            "schema": {
+              "type": "string",
+              "enum": ["admin", "driver", "cs", "inventory"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StaffMember"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Staff"],
+        "summary": "Create a new staff member",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffMemberInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Staff member created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMember"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/staff/{id}": {
+      "get": {
+        "tags": ["Staff"],
+        "summary": "Get staff member by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMember"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Staff"],
+        "summary": "Update staff member",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffMemberInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Staff member updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMember"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Staff"],
+        "summary": "Delete staff member",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Staff member deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/staff/{id}/status": {
+      "patch": {
+        "tags": ["Staff"],
+        "summary": "Update driver online status",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "isOnline": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMember"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/suppliers": {
+      "get": {
+        "tags": ["Suppliers"],
+        "summary": "Get all suppliers",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "pending"]
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by category",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Supplier"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Suppliers"],
+        "summary": "Create a new supplier",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Supplier created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/suppliers/{id}": {
+      "get": {
+        "tags": ["Suppliers"],
+        "summary": "Get supplier by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Suppliers"],
+        "summary": "Update supplier",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Supplier updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Suppliers"],
+        "summary": "Delete supplier",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Supplier deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": ["Settings"],
+        "summary": "Get store settings",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSettings"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Settings"],
+        "summary": "Update store settings",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/customers/{phone}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Get customer by phone number",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Create or update customer",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer created or updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Customers"],
+        "summary": "Update customer points",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "points": {
+                    "type": "integer",
+                    "description": "Set points to this value"
+                  },
+                  "pointsDelta": {
+                    "type": "integer",
+                    "description": "Add/subtract this amount from current points"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Update customer name"
+                  },
+                  "address": {
+                    "type": "string",
+                    "description": "Update customer address"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/customers/{phone}/points": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Get customer loyalty points",
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "phone": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "integer"
+                    },
+                    "totalSpent": {
+                      "type": "number"
+                    },
+                    "totalOrders": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "price",
+          "unit",
+          "category",
+          "image",
+          "description",
+          "stock"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique product identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Product name in Arabic"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "description": "Product price in EGP"
+          },
+          "unit": {
+            "type": "string",
+            "description": "Unit of measurement (e.g., كيلو, لتر)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category ID"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "Product image URL"
+          },
+          "description": {
+            "type": "string",
+            "description": "Product description in Arabic"
+          },
+          "stock": {
+            "type": "integer",
+            "description": "Available quantity in stock"
+          },
+          "originalPrice": {
+            "type": "number",
+            "format": "float",
+            "description": "Original price before discount"
+          }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "price",
+          "unit",
+          "category",
+          "image",
+          "description",
+          "stock"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "float"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "integer"
+          },
+          "originalPrice": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "required": ["id", "name", "icon", "color", "image"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique category identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Category name in Arabic"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon identifier"
+          },
+          "color": {
+            "type": "string",
+            "description": "Tailwind CSS color classes"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "Category image URL"
+          },
+          "isHidden": {
+            "type": "boolean",
+            "description": "Whether category is hidden from customers"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "description": "Whether category is locked (coming soon)"
+          }
+        }
+      },
+      "CategoryInput": {
+        "type": "object",
+        "required": ["id", "name", "icon", "color", "image"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri"
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "isLocked": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": [
+          "id",
+          "customerName",
+          "phone",
+          "address",
+          "items",
+          "total",
+          "status",
+          "date"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique order identifier"
+          },
+          "customerName": {
+            "type": "string",
+            "description": "Customer name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Customer phone number"
+          },
+          "address": {
+            "type": "string",
+            "description": "Delivery address"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartItem"
+            }
+          },
+          "subtotal": {
+            "type": "number",
+            "format": "float",
+            "description": "Subtotal before delivery fee and discounts"
+          },
+          "deliveryFee": {
+            "type": "number",
+            "format": "float",
+            "description": "Delivery fee in EGP"
+          },
+          "total": {
+            "type": "number",
+            "format": "float",
+            "description": "Total order amount in EGP"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "ready",
+              "out_for_delivery",
+              "delivered",
+              "cancelled"
+            ]
+          },
+          "driverId": {
+            "type": "string",
+            "description": "Assigned driver ID"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when order was created"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Legacy field - use createdAt instead"
+          },
+          "timestamp": {
+            "type": "integer",
+            "description": "Unix timestamp when order was created (legacy)"
+          },
+          "deliveryTimestamp": {
+            "type": "integer",
+            "description": "Unix timestamp when order was delivered"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when order was delivered"
+          },
+          "receiptImage": {
+            "type": "string",
+            "description": "Base64 encoded receipt image or URL"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["cod", "online", "wallet"]
+          },
+          "pointsUsed": {
+            "type": "integer",
+            "description": "Loyalty points used for discount"
+          },
+          "pointsDiscount": {
+            "type": "number",
+            "format": "float",
+            "description": "Discount amount from points in EGP"
+          }
+        }
+      },
+      "OrderInput": {
+        "type": "object",
+        "required": [
+          "customerName",
+          "phone",
+          "address",
+          "items",
+          "paymentMethod"
+        ],
+        "properties": {
+          "customerName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "quantity"],
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "quantity": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "subtotal": {
+            "type": "number",
+            "format": "float",
+            "description": "Subtotal before delivery fee and discounts"
+          },
+          "deliveryFee": {
+            "type": "number",
+            "format": "float",
+            "description": "Delivery fee in EGP"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["cod", "online", "wallet"]
+          },
+          "pointsUsed": {
+            "type": "integer",
+            "description": "Number of points to use for discount"
+          },
+          "pointsDiscount": {
+            "type": "number",
+            "format": "float",
+            "description": "Discount amount from points in EGP"
+          }
+        }
+      },
+      "CartItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Product"
+          },
+          {
+            "type": "object",
+            "required": ["quantity"],
+            "properties": {
+              "quantity": {
+                "type": "integer",
+                "description": "Quantity in cart"
+              }
+            }
+          }
+        ]
+      },
+      "StaffMember": {
+        "type": "object",
+        "required": ["id", "name", "username", "role"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique staff member identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Staff member full name"
+          },
+          "username": {
+            "type": "string",
+            "description": "Login username"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "driver", "cs", "inventory"]
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number (important for drivers)"
+          },
+          "activeOrders": {
+            "type": "integer",
+            "description": "Number of active orders (for drivers)"
+          },
+          "specialization": {
+            "type": "string",
+            "description": "Category specialization (for drivers)"
+          },
+          "isOnline": {
+            "type": "boolean",
+            "description": "Online status (for drivers)"
+          }
+        }
+      },
+      "StaffMemberInput": {
+        "type": "object",
+        "required": ["name", "username", "password", "role"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "driver", "cs", "inventory"]
+          },
+          "phone": {
+            "type": "string"
+          },
+          "specialization": {
+            "type": "string"
+          }
+        }
+      },
+      "Supplier": {
+        "type": "object",
+        "required": ["id", "name", "phone", "category", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique supplier identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Supplier name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Contact phone number"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category they supply"
+          },
+          "companyName": {
+            "type": "string",
+            "description": "Company name"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "pending"]
+          }
+        }
+      },
+      "SupplierInput": {
+        "type": "object",
+        "required": ["name", "phone", "category"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "pending"],
+            "default": "pending"
+          }
+        }
+      },
+      "StoreSettings": {
+        "type": "object",
+        "required": [
+          "pointsSystem",
+          "deliveryFee",
+          "announcement",
+          "socialMedia",
+          "paymentInfo",
+          "promo",
+          "content"
+        ],
+        "properties": {
+          "pointsSystem": {
+            "type": "object",
+            "properties": {
+              "active": {
+                "type": "boolean"
+              },
+              "value": {
+                "type": "number",
+                "description": "Earning rate: Spend X EGP = 1 Point"
+              },
+              "redemptionValue": {
+                "type": "number",
+                "description": "Redemption rate: 1 Point = X EGP"
+              }
+            }
+          },
+          "deliveryFee": {
+            "type": "number",
+            "format": "float"
+          },
+          "announcement": {
+            "type": "object",
+            "properties": {
+              "active": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          },
+          "socialMedia": {
+            "type": "object",
+            "properties": {
+              "facebook": {
+                "type": "string"
+              },
+              "instagram": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          },
+          "paymentInfo": {
+            "type": "object",
+            "properties": {
+              "vodafoneCash": {
+                "type": "string"
+              },
+              "instaPay": {
+                "type": "string"
+              }
+            }
+          },
+          "promo": {
+            "type": "object",
+            "properties": {
+              "isActive": {
+                "type": "boolean"
+              },
+              "image": {
+                "type": "string",
+                "format": "uri"
+              },
+              "topBadge": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "buttonText": {
+                "type": "string"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "properties": {
+              "hero": {
+                "type": "object",
+                "properties": {
+                  "badge": {
+                    "type": "string"
+                  },
+                  "titleLine1": {
+                    "type": "string"
+                  },
+                  "titleHighlight": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "journey": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "sections": {
+                "type": "object",
+                "properties": {
+                  "categoriesTitle": {
+                    "type": "string"
+                  },
+                  "categoriesSubtitle": {
+                    "type": "string"
+                  }
+                }
+              },
+              "info": {
+                "type": "object",
+                "properties": {
+                  "terms": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "quality": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "hotline": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "required": ["phone"],
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Customer phone number (unique identifier)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Customer full name"
+          },
+          "address": {
+            "type": "string",
+            "description": "Default delivery address"
+          },
+          "points": {
+            "type": "integer",
+            "default": 0,
+            "description": "Loyalty points balance"
+          },
+          "totalSpent": {
+            "type": "number",
+            "format": "float",
+            "description": "Total amount spent across all orders"
+          },
+          "totalOrders": {
+            "type": "integer",
+            "description": "Total number of orders placed"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
 }

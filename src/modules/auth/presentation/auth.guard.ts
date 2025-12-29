@@ -1,58 +1,58 @@
-import { jwt } from "@elysiajs/jwt";
-import { Elysia } from "elysia";
-import { UnauthorizedError } from "../../../shared/presentation/errors";
-import type { UserRole } from "../domain/user.entity";
+import { jwt } from '@elysiajs/jwt'
+import { Elysia } from 'elysia'
+import { UnauthorizedError } from '../../../shared/presentation/errors'
+import type { UserRole } from '../domain/user.entity'
 
 export const authGuard = (allowedRoles?: UserRole[]) => {
-	return new Elysia({ name: "authGuard" })
-		.use(
-			jwt({
-				name: "accessJwt",
-				secret: process.env.JWT_SECRET || "change-me-in-production",
-			}),
-		)
-		.derive({ as: "scoped" }, async ({ accessJwt, headers }) => {
-			const authHeader = headers.authorization || headers.Authorization;
+  return new Elysia({ name: 'authGuard' })
+    .use(
+      jwt({
+        name: 'accessJwt',
+        secret: process.env.JWT_SECRET || 'change-me-in-production',
+      }),
+    )
+    .derive({ as: 'scoped' }, async ({ accessJwt, headers }) => {
+      const authHeader = headers.authorization || headers.Authorization
 
-			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				throw new UnauthorizedError([
-					{
-						path: "authorization",
-						message: "Missing or invalid authorization header",
-					},
-				]);
-			}
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new UnauthorizedError([
+          {
+            path: 'authorization',
+            message: 'Missing or invalid authorization header',
+          },
+        ])
+      }
 
-			const token = authHeader.substring(7);
-			const payload = await accessJwt.verify(token);
+      const token = authHeader.substring(7)
+      const payload = await accessJwt.verify(token)
 
-			if (!payload || typeof payload !== "object" || !("sub" in payload)) {
-				throw new UnauthorizedError([
-					{
-						path: "authorization",
-						message: "Invalid token",
-					},
-				]);
-			}
+      if (!payload || typeof payload !== 'object' || !('sub' in payload)) {
+        throw new UnauthorizedError([
+          {
+            path: 'authorization',
+            message: 'Invalid token',
+          },
+        ])
+      }
 
-			const userId = payload.sub as string;
-			const role = (payload.role as UserRole) || undefined;
+      const userId = payload.sub as string
+      const role = (payload.role as UserRole) || undefined
 
-			// Check role if specified
-			if (allowedRoles && role && !allowedRoles.includes(role)) {
-				throw new UnauthorizedError([
-					{
-						path: "authorization",
-						message: "Insufficient permissions",
-					},
-				]);
-			}
+      // Check role if specified
+      if (allowedRoles && role && !allowedRoles.includes(role)) {
+        throw new UnauthorizedError([
+          {
+            path: 'authorization',
+            message: 'Insufficient permissions',
+          },
+        ])
+      }
 
-			return {
-				user: {
-					id: userId,
-					role: role as UserRole,
-				},
-			};
-		});
-};
+      return {
+        user: {
+          id: userId,
+          role: role as UserRole,
+        },
+      }
+    })
+}

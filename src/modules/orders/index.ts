@@ -1,1 +1,1 @@
-export { ordersController } from "./presentation/orders.controller";
+export { ordersController } from './presentation/orders.controller'
