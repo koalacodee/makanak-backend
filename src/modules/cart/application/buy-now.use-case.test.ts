@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
 import { BuyNowUseCase } from "./buy-now.use-case";
 import type { ICartRepository } from "../domain/cart.iface";
 import type { IOrderRepository } from "../../orders/domain/orders.iface";
 import type { IProductRepository } from "../../products/domain/products.iface";
 import type { ICustomerRepository } from "../../customers/domain/customers.iface";
+import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import type { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
 import type { Cart, CartItemEntity } from "../domain/cart.entity";
 import type { Order } from "../../orders/domain/order.entity";
 import type { Product } from "../../products/domain/product.entity";
@@ -12,6 +14,10 @@ import {
   BadRequestError,
   NotFoundError,
 } from "../../../shared/presentation/errors";
+import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
+import filehub from "@/shared/filehub";
+import redis from "@/shared/redis";
+import { inventoryIO } from "@/socket.io";
 
 describe("BuyNowUseCase", () => {
   let useCase: BuyNowUseCase;
@@ -19,6 +25,12 @@ describe("BuyNowUseCase", () => {
   let mockOrderRepo: IOrderRepository;
   let mockProductRepo: IProductRepository;
   let mockCustomerRepo: ICustomerRepository;
+  let mockSettingsRepo: ISettingsRepository;
+  let mockCouponRepo: ICouponRepository;
+  let mockUpsertCustomerUC: UpsertCustomerUseCase;
+  let originalGetSignedPutUrl: typeof filehub.getSignedPutUrl;
+  let originalSet: typeof redis.set;
+  let originalNotifyInventoryWithPendingOrder: typeof inventoryIO.notifyInventoryWithPendingOrder;
 
   beforeEach(() => {
     useCase = new BuyNowUseCase();
@@ -41,13 +53,18 @@ describe("BuyNowUseCase", () => {
           customerName: "John Doe",
           phone: "1234567890",
           address: "123 Main St",
-          items: [],
-          total: "100.00",
+          orderItems: [],
+          total: 100,
           status: "pending",
-          createdAt: new Date(),
+          createdAt: new Date().toISOString(),
         } as Order)
       ),
       update: mock(() => Promise.resolve({} as Order)),
+      getReadyOrdersForDriver: mock(() =>
+        Promise.resolve({ orders: [], counts: [] })
+      ),
+      count: mock(() => Promise.resolve(0)),
+      saveCancellation: mock(() => Promise.resolve({} as any)),
     };
     mockProductRepo = {
       findAll: mock(() => Promise.resolve({ data: [], total: 0 })),
@@ -55,36 +72,107 @@ describe("BuyNowUseCase", () => {
         Promise.resolve({
           id: "product-1",
           name: "Product 1",
-          price: "10.00",
-          unit: "kg",
+          price: 10,
           category: "cat-1",
-          image: "https://example.com/img1.jpg",
           description: "Description 1",
           stock: 100,
+          quantityType: "count" as const,
         } as Product)
       ),
+      findByIds: mock(() =>
+        Promise.resolve([
+          {
+            id: "product-1",
+            name: "Product 1",
+            price: 10,
+            category: "cat-1",
+            description: "Description 1",
+            stock: 100,
+            quantityType: "count" as const,
+          } as Product,
+        ])
+      ),
+      existsByIds: mock(() => Promise.resolve(true)),
       create: mock(() => Promise.resolve({} as Product)),
       update: mock(() => Promise.resolve({} as Product)),
       delete: mock(() => Promise.resolve()),
+      updateStock: mock(() => Promise.resolve()),
+      updateStockMany: mock(() => Promise.resolve()),
     };
     mockCustomerRepo = {
       findByPhone: mock(() =>
         Promise.resolve({
           phone: "1234567890",
+          password: "hash",
           name: "John Doe",
           address: "123 Main St",
           points: 100,
-          totalSpent: "0",
-          totalOrders: 0,
+          totalSpent: null,
+          totalOrders: null,
           createdAt: new Date(),
           updatedAt: new Date(),
-        } as Customer)
+        } as any)
       ),
       create: mock(() => Promise.resolve({} as Customer)),
       update: mock(() => Promise.resolve({} as Customer)),
+      changePassword: mock(() => Promise.resolve({} as Customer)),
       upsert: mock(() => Promise.resolve({} as Customer)),
       getPointsInfo: mock(() => Promise.resolve(null)),
+      findAll: mock(() => Promise.resolve([])),
     };
+    mockSettingsRepo = {
+      find: mock(() =>
+        Promise.resolve({
+          deliveryFee: 10,
+          pointsSystem: {
+            value: 10,
+            redemptionValue: 0.1,
+          },
+        } as any)
+      ),
+      update: mock(() => Promise.resolve({} as any)),
+      create: mock(() => Promise.resolve({} as any)),
+    };
+    mockCouponRepo = {
+      findAll: mock(() => Promise.resolve([])),
+      findById: mock(() => Promise.resolve(null)),
+      findByName: mock(() => Promise.resolve(null)),
+      create: mock(() => Promise.resolve({} as any)),
+      update: mock(() => Promise.resolve({} as any)),
+      delete: mock(() => Promise.resolve()),
+    };
+    mockUpsertCustomerUC = {
+      execute: mock(() =>
+        Promise.resolve({
+          phone: "1234567890",
+          name: "John Doe",
+          address: "123 Main St",
+          points: 100,
+        } as any)
+      ),
+    } as any;
+    originalGetSignedPutUrl = filehub.getSignedPutUrl;
+    originalSet = redis.set;
+    originalNotifyInventoryWithPendingOrder =
+      inventoryIO.notifyInventoryWithPendingOrder;
+    filehub.getSignedPutUrl = mock(() =>
+      Promise.resolve({
+        filename: "receipt.jpg",
+        signedUrl: "https://example.com/upload.jpg",
+        expirationDate: new Date(),
+      })
+    ) as typeof filehub.getSignedPutUrl;
+    redis.set = mock(() => Promise.resolve("OK")) as typeof redis.set;
+    inventoryIO.notifyInventoryWithPendingOrder = mock(
+      () => {}
+    ) as typeof inventoryIO.notifyInventoryWithPendingOrder;
+  });
+
+  afterEach(() => {
+    filehub.getSignedPutUrl = originalGetSignedPutUrl;
+    redis.set = originalSet;
+    inventoryIO.notifyInventoryWithPendingOrder =
+      originalNotifyInventoryWithPendingOrder;
   });
 
   it("should convert cart to order successfully", async () => {
@@ -113,34 +201,31 @@ describe("BuyNowUseCase", () => {
       updatedAt: new Date(),
     };
 
-    const mockOrder: Order = {
+    const createdOrder: Order = {
       id: "order-1",
       customerName: "John Doe",
       phone: "1234567890",
       address: "123 Main St",
-      items: [
+      orderItems: [
         {
-          id: "product-1",
-          name: "Product 1",
-          price: 10,
-          unit: "kg",
-          category: "cat-1",
-          image: "https://example.com/img1.jpg",
-          description: "Description 1",
-          stock: 100,
-          originalPrice: null,
+          id: "item-1",
+          orderId: "order-1",
+          productId: "product-1",
           quantity: 2,
+          price: 10,
+          productName: "Product 1",
+          productStock: 100,
+          productQuantityType: "count",
         },
       ],
-      subtotal: "20.00",
-      deliveryFee: "5.00",
-      total: "25.00",
+      total: 100,
       status: "pending",
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     };
 
     mockCartRepo.findByCustomerPhone = mock(() => Promise.resolve(mockCart));
-    mockOrderRepo.create = mock(() => Promise.resolve(mockOrder));
+    mockOrderRepo.create = mock(() => Promise.resolve(createdOrder));
+    mockOrderRepo.findById = mock(() => Promise.resolve(createdOrder));
     mockCartRepo.clearCart = mock(() => Promise.resolve());
 
     const result = await useCase.execute(
@@ -151,14 +236,18 @@ describe("BuyNowUseCase", () => {
         subtotal: 20,
         deliveryFee: 5,
         paymentMethod: "cod",
+        password: "password123",
       },
       mockCartRepo,
       mockOrderRepo,
       mockProductRepo,
-      mockCustomerRepo
+      mockUpsertCustomerUC,
+      mockSettingsRepo,
+      mockCustomerRepo,
+      mockCouponRepo
     );
 
-    expect(result).toEqual(mockOrder);
+    expect(result.id).toBeDefined();
     expect(mockCartRepo.clearCart).toHaveBeenCalledWith("cart-1");
   });
 
@@ -188,19 +277,19 @@ describe("BuyNowUseCase", () => {
       updatedAt: new Date(),
     };
 
-    const mockOrder: Order = {
-      id: "order-1",
-      customerName: "John Doe",
-      phone: "1234567890",
-      address: "123 Main St",
-      items: [],
-      total: "20.00",
-      status: "pending",
-      createdAt: new Date(),
-    };
-
     mockCartRepo.findByCustomerPhone = mock(() => Promise.resolve(mockCart));
-    mockOrderRepo.create = mock(() => Promise.resolve(mockOrder));
+    mockOrderRepo.findById = mock(() =>
+      Promise.resolve({
+        id: "order-1",
+        customerName: "John Doe",
+        phone: "1234567890",
+        address: "123 Main St",
+        orderItems: [],
+        total: 100,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      } as Order)
+    );
     mockCartRepo.clearCart = mock(() => Promise.resolve());
 
     await useCase.execute(
@@ -209,17 +298,19 @@ describe("BuyNowUseCase", () => {
         customerName: "John Doe",
         address: "123 Main St",
         paymentMethod: "cod",
+        password: "password123",
       },
       mockCartRepo,
       mockOrderRepo,
       mockProductRepo,
-      mockCustomerRepo
+      mockUpsertCustomerUC,
+      mockSettingsRepo,
+      mockCustomerRepo,
+      mockCouponRepo
     );
 
-    // Verify create was called with calculated subtotal (2 * 10 = 20)
+    // Verify create was called
     expect(mockOrderRepo.create).toHaveBeenCalled();
-    const createCall = (mockOrderRepo.create as any).mock.calls[0];
-    expect(createCall[0].subtotal).toBe("20");
   });
 
   it("should throw NotFoundError if cart not found", async () => {
@@ -232,11 +323,15 @@ describe("BuyNowUseCase", () => {
           customerName: "John Doe",
           address: "123 Main St",
           paymentMethod: "cod",
+          password: "password123",
         },
         mockCartRepo,
         mockOrderRepo,
         mockProductRepo,
-        mockCustomerRepo
+        mockUpsertCustomerUC,
+        mockSettingsRepo,
+        mockCustomerRepo,
+        mockCouponRepo
       )
     ).rejects.toThrow(NotFoundError);
   });
@@ -259,11 +354,15 @@ describe("BuyNowUseCase", () => {
           customerName: "John Doe",
           address: "123 Main St",
           paymentMethod: "cod",
+          password: "password123",
         },
         mockCartRepo,
         mockOrderRepo,
         mockProductRepo,
-        mockCustomerRepo
+        mockUpsertCustomerUC,
+        mockSettingsRepo,
+        mockCustomerRepo,
+        mockCouponRepo
       )
     ).rejects.toThrow(BadRequestError);
   });

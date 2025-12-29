@@ -164,7 +164,10 @@ export const cartController = new Elysia({ prefix: "/carts" })
       cartRepo,
       orderRepo,
       productRepo,
+      upsertCustomerUC,
+      settingsRepo,
       customerRepo,
+      couponRepo,
     }) => {
       const order = await buyNowUC.execute(
         params.phone,
@@ -176,39 +179,30 @@ export const cartController = new Elysia({ prefix: "/carts" })
           paymentMethod: body.paymentMethod,
           pointsUsed: body.pointsUsed,
           pointsDiscount: body.pointsDiscount,
+          password: body.password,
         },
         cartRepo,
         orderRepo,
         productRepo,
-        customerRepo
+        upsertCustomerUC,
+        settingsRepo,
+        customerRepo,
+        couponRepo
       );
       return {
         id: order.id,
         customerName: order.customerName,
         phone: order.phone,
         address: order.address,
-        items: order.items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          unit: item.unit,
-          category: item.category,
-          image: item.image,
-          description: item.description,
-          stock: item.stock,
-          originalPrice: item.originalPrice ?? undefined,
-          quantity: item.quantity,
-        })),
-        subtotal: order.subtotal ? parseFloat(order.subtotal) : undefined,
-        deliveryFee: order.deliveryFee
-          ? parseFloat(order.deliveryFee)
-          : undefined,
-        total: parseFloat(order.total),
+        orderItems: order.orderItems,
+        subtotal: order.subtotal ? order.subtotal : undefined,
+        deliveryFee: order.deliveryFee ? order.deliveryFee : undefined,
+        total: order.total,
         status: order.status,
         driverId: order.driverId ?? undefined,
-        createdAt: order.createdAt.toISOString(),
-        deliveredAt: order.deliveredAt?.toISOString() ?? undefined,
-        receiptImage: order.receiptImage ?? undefined,
+        createdAt: order.createdAt,
+        deliveredAt: order.deliveredAt ?? undefined,
+
         paymentMethod: order.paymentMethod ?? undefined,
         pointsUsed: order.pointsUsed ?? undefined,
         pointsDiscount: order.pointsDiscount

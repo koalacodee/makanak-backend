@@ -2,12 +2,15 @@ import type { ICartRepository } from "../domain/cart.iface";
 import type { IOrderRepository } from "../../orders/domain/orders.iface";
 import type { IProductRepository } from "../../products/domain/products.iface";
 import type { ICustomerRepository } from "../../customers/domain/customers.iface";
+import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import type { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
 import type { Order, PaymentMethod } from "../../orders/domain/order.entity";
 import {
   BadRequestError,
   NotFoundError,
 } from "../../../shared/presentation/errors";
 import { CreateOrderUseCase } from "../../orders/application/create-order.use-case";
+import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
 
 export class BuyNowUseCase {
   private createOrderUC: CreateOrderUseCase;
@@ -26,11 +29,15 @@ export class BuyNowUseCase {
       paymentMethod: PaymentMethod;
       pointsUsed?: number;
       pointsDiscount?: number;
+      password: string;
     },
     cartRepo: ICartRepository,
     orderRepo: IOrderRepository,
     productRepo: IProductRepository,
-    customerRepo: ICustomerRepository
+    upsertCustomerUC: UpsertCustomerUseCase,
+    settingsRepo: ISettingsRepository,
+    customerRepo: ICustomerRepository,
+    couponRepo: ICouponRepository
   ): Promise<Order> {
     // Get cart
     const cart = await cartRepo.findByCustomerPhone(customerPhone);
@@ -69,26 +76,27 @@ export class BuyNowUseCase {
     }
 
     // Create order using CreateOrderUseCase
-    const order = await this.createOrderUC.execute(
+    const result = await this.createOrderUC.execute(
       {
         customerName: data.customerName,
         phone: customerPhone,
         address: data.address,
         items: orderItems,
-        subtotal,
-        deliveryFee: data.deliveryFee,
         paymentMethod: data.paymentMethod,
-        pointsUsed: data.pointsUsed,
-        pointsDiscount: data.pointsDiscount,
+        pointsToUse: data.pointsUsed,
+        password: data.password,
       },
       orderRepo,
       productRepo,
-      customerRepo
+      upsertCustomerUC,
+      settingsRepo,
+      customerRepo,
+      couponRepo
     );
 
     // Clear cart after successful order creation
     await cartRepo.clearCart(cart.id);
 
-    return order;
+    return result.order;
   }
 }

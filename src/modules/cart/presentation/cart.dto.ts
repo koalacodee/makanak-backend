@@ -47,13 +47,10 @@ export const BuyNowDto = t.Object({
   address: t.String(),
   subtotal: t.Optional(t.Number()),
   deliveryFee: t.Optional(t.Number()),
-  paymentMethod: t.Union([
-    t.Literal("cod"),
-    t.Literal("online"),
-    t.Literal("wallet"),
-  ]),
+  paymentMethod: t.Union([t.Literal("cod"), t.Literal("online")]),
   pointsUsed: t.Optional(t.Integer({ minimum: 0 })),
   pointsDiscount: t.Optional(t.Number()),
+  password: t.String(),
 });
 
 export type Cart = Static<typeof CartDto>;
