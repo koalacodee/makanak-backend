@@ -71,7 +71,6 @@ export class MakanakSDK {
               if (url.includes('/auth/login') || url.includes('/auth/logout')) {
                 throw error
               }
-
               // Mark that we need to retry
               ;(error as Error & { shouldRetry?: boolean }).shouldRetry = true
             }
