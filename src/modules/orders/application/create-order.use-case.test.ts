@@ -1,18 +1,30 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
 import { CreateOrderUseCase } from "./create-order.use-case";
 import type { IOrderRepository } from "../domain/orders.iface";
 import type { IProductRepository } from "../../products/domain/products.iface";
 import type { ICustomerRepository } from "../../customers/domain/customers.iface";
+import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import type { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
 import type { Order } from "../domain/order.entity";
 import type { Product } from "../../products/domain/product.entity";
 import type { Customer } from "../../customers/domain/customer.entity";
 import { BadRequestError } from "../../../shared/presentation/errors";
+import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
+import filehub from "@/shared/filehub";
+import redis from "@/shared/redis";
+import { inventoryIO } from "@/socket.io";
 
 describe("CreateOrderUseCase", () => {
   let useCase: CreateOrderUseCase;
   let mockOrderRepo: IOrderRepository;
   let mockProductRepo: IProductRepository;
   let mockCustomerRepo: ICustomerRepository;
+  let mockSettingsRepo: ISettingsRepository;
+  let mockCouponRepo: ICouponRepository;
+  let mockUpsertCustomerUC: UpsertCustomerUseCase;
+  let originalGetSignedPutUrl: typeof filehub.getSignedPutUrl;
+  let originalSet: typeof redis.set;
+  let originalNotifyInventoryWithPendingOrder: typeof inventoryIO.notifyInventoryWithPendingOrder;
 
   beforeEach(() => {
     useCase = new CreateOrderUseCase();
@@ -25,13 +37,18 @@ describe("CreateOrderUseCase", () => {
           customerName: "John Doe",
           phone: "1234567890",
           address: "123 Main St",
-          items: [],
-          total: "100.00",
+          orderItems: [],
+          total: 100,
           status: "pending",
-          createdAt: new Date(),
+          createdAt: new Date().toISOString(),
         } as Order)
       ),
       update: mock(() => Promise.resolve({} as Order)),
+      getReadyOrdersForDriver: mock(() =>
+        Promise.resolve({ orders: [], counts: [] })
+      ),
+      count: mock(() => Promise.resolve(0)),
+      saveCancellation: mock(() => Promise.resolve({} as any)),
     };
 
     mockProductRepo = {
@@ -40,16 +57,31 @@ describe("CreateOrderUseCase", () => {
         Promise.resolve({
           id: "product-1",
           name: "Product 1",
-          price: "10.00",
-          unit: "kg",
+          price: 10,
           category: "cat-1",
-          image: "https://...",
           description: "Description",
           stock: 100,
+          quantityType: "count",
         } as Product)
       ),
+      findByIds: mock(() =>
+        Promise.resolve([
+          {
+            id: "product-1",
+            name: "Product 1",
+            price: 10,
+            category: "cat-1",
+            description: "Description",
+            stock: 100,
+            quantityType: "count",
+          } as Product,
+        ])
+      ),
+      existsByIds: mock(() => Promise.resolve(true)),
       create: mock(() => Promise.resolve({} as Product)),
       update: mock(() => Promise.resolve({} as Product)),
+      updateStock: mock(() => Promise.resolve()),
+      updateStockMany: mock(() => Promise.resolve()),
       delete: mock(() => Promise.resolve()),
     };
 
@@ -58,19 +90,79 @@ describe("CreateOrderUseCase", () => {
       create: mock(() =>
         Promise.resolve({
           phone: "1234567890",
+          password: "hash",
           name: "John Doe",
           address: "123 Main St",
           points: 0,
-          totalSpent: "0",
-          totalOrders: 0,
+          totalSpent: null,
+          totalOrders: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         } as Customer)
       ),
       update: mock(() => Promise.resolve({} as Customer)),
+      changePassword: mock(() => Promise.resolve({} as Customer)),
       upsert: mock(() => Promise.resolve({} as Customer)),
       getPointsInfo: mock(() => Promise.resolve(null)),
+      findAll: mock(() => Promise.resolve([])),
     };
+
+    mockSettingsRepo = {
+      find: mock(() =>
+        Promise.resolve({
+          deliveryFee: 10,
+          pointsSystem: {
+            value: 10,
+            redemptionValue: 0.1,
+          },
+        } as any)
+      ),
+      update: mock(() => Promise.resolve({} as any)),
+      create: mock(() => Promise.resolve({} as any)),
+    };
+
+    mockCouponRepo = {
+      findAll: mock(() => Promise.resolve([])),
+      findById: mock(() => Promise.resolve(null)),
+      findByName: mock(() => Promise.resolve(null)),
+      create: mock(() => Promise.resolve({} as any)),
+      update: mock(() => Promise.resolve({} as any)),
+      delete: mock(() => Promise.resolve()),
+    };
+
+    mockUpsertCustomerUC = {
+      execute: mock(() =>
+        Promise.resolve({
+          phone: "1234567890",
+          name: "John Doe",
+          address: "123 Main St",
+          points: 0,
+        } as any)
+      ),
+    } as any;
+
+    originalGetSignedPutUrl = filehub.getSignedPutUrl;
+    originalSet = redis.set;
+    originalNotifyInventoryWithPendingOrder =
+      inventoryIO.notifyInventoryWithPendingOrder;
+    filehub.getSignedPutUrl = mock(() =>
+      Promise.resolve({
+        filename: "receipt.jpg",
+        signedUrl: "https://example.com/upload.jpg",
+        expirationDate: new Date(),
+      })
+    ) as typeof filehub.getSignedPutUrl;
+    redis.set = mock(() => Promise.resolve("OK")) as typeof redis.set;
+    inventoryIO.notifyInventoryWithPendingOrder = mock(
+      () => {}
+    ) as typeof inventoryIO.notifyInventoryWithPendingOrder;
+  });
+
+  afterEach(() => {
+    filehub.getSignedPutUrl = originalGetSignedPutUrl;
+    redis.set = originalSet;
+    inventoryIO.notifyInventoryWithPendingOrder =
+      originalNotifyInventoryWithPendingOrder;
   });
 
   it("should create order successfully", async () => {
@@ -80,20 +172,39 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [{ id: "product-1", quantity: 2 }],
       paymentMethod: "cod" as const,
+      password: "password123",
     };
+
+    mockOrderRepo.findById = mock(() =>
+      Promise.resolve({
+        id: "new-id",
+        customerName: "John Doe",
+        phone: "1234567890",
+        address: "123 Main St",
+        orderItems: [],
+        total: 100,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      } as Order)
+    );
 
     const result = await useCase.execute(
       orderData,
       mockOrderRepo,
       mockProductRepo,
-      mockCustomerRepo
+      mockUpsertCustomerUC,
+      mockSettingsRepo,
+      mockCustomerRepo,
+      mockCouponRepo
     );
 
-    expect(result.id).toBe("new-id");
+    expect(result.order.id).toBe("new-id");
+    expect(result.verificationCode).toBeDefined();
     expect(mockOrderRepo.create).toHaveBeenCalled();
-    expect(mockProductRepo.findById).toHaveBeenCalledWith("product-1");
-    expect(mockProductRepo.update).toHaveBeenCalled();
-    expect(mockCustomerRepo.create).toHaveBeenCalled();
+    expect(mockProductRepo.findByIds).toHaveBeenCalledWith(["product-1"]);
+    expect(mockProductRepo.updateStockMany).toHaveBeenCalled();
+    expect(mockUpsertCustomerUC.execute).toHaveBeenCalled();
+    expect(mockSettingsRepo.find).toHaveBeenCalled();
   });
 
   it("should throw BadRequestError for empty items array", async () => {
@@ -103,6 +214,7 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [],
       paymentMethod: "cod" as const,
+      password: "password123",
     };
 
     await expect(
@@ -110,7 +222,10 @@ describe("CreateOrderUseCase", () => {
         orderData,
         mockOrderRepo,
         mockProductRepo,
-        mockCustomerRepo
+        mockUpsertCustomerUC,
+        mockSettingsRepo,
+        mockCustomerRepo,
+        mockCouponRepo
       )
     ).rejects.toThrow(BadRequestError);
     expect(mockOrderRepo.create).not.toHaveBeenCalled();
@@ -123,6 +238,7 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [{ id: "product-1", quantity: 0 }],
       paymentMethod: "cod" as const,
+      password: "password123",
     };
 
     await expect(
@@ -130,7 +246,10 @@ describe("CreateOrderUseCase", () => {
         orderData,
         mockOrderRepo,
         mockProductRepo,
-        mockCustomerRepo
+        mockUpsertCustomerUC,
+        mockSettingsRepo,
+        mockCustomerRepo,
+        mockCouponRepo
       )
     ).rejects.toThrow(BadRequestError);
     expect(mockOrderRepo.create).not.toHaveBeenCalled();
@@ -143,6 +262,7 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [{ id: "product-1", quantity: -1 }],
       paymentMethod: "cod" as const,
+      password: "password123",
     };
 
     await expect(
@@ -150,24 +270,28 @@ describe("CreateOrderUseCase", () => {
         orderData,
         mockOrderRepo,
         mockProductRepo,
-        mockCustomerRepo
+        mockUpsertCustomerUC,
+        mockSettingsRepo,
+        mockCustomerRepo,
+        mockCouponRepo
       )
     ).rejects.toThrow(BadRequestError);
     expect(mockOrderRepo.create).not.toHaveBeenCalled();
   });
 
   it("should throw BadRequestError for insufficient stock", async () => {
-    mockProductRepo.findById = mock(() =>
-      Promise.resolve({
-        id: "product-1",
-        name: "Product 1",
-        price: "10.00",
-        unit: "kg",
-        category: "cat-1",
-        image: "https://...",
-        description: "Description",
-        stock: 1, // Only 1 in stock
-      } as Product)
+    mockProductRepo.findByIds = mock(() =>
+      Promise.resolve([
+        {
+          id: "product-1",
+          name: "Product 1",
+          price: 10,
+          category: "cat-1",
+          description: "Description",
+          stock: 1, // Only 1 in stock
+          quantityType: "count",
+        } as Product,
+      ])
     );
 
     const orderData = {
@@ -176,6 +300,7 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [{ id: "product-1", quantity: 2 }], // Requesting 2
       paymentMethod: "cod" as const,
+      password: "password123",
     };
 
     await expect(
@@ -183,14 +308,17 @@ describe("CreateOrderUseCase", () => {
         orderData,
         mockOrderRepo,
         mockProductRepo,
-        mockCustomerRepo
+        mockUpsertCustomerUC,
+        mockSettingsRepo,
+        mockCustomerRepo,
+        mockCouponRepo
       )
     ).rejects.toThrow(BadRequestError);
     expect(mockOrderRepo.create).not.toHaveBeenCalled();
   });
 
   it("should throw BadRequestError for non-existent product", async () => {
-    mockProductRepo.findById = mock(() => Promise.resolve(null));
+    mockProductRepo.findByIds = mock(() => Promise.resolve([]));
 
     const orderData = {
       customerName: "John Doe",
@@ -198,6 +326,7 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [{ id: "non-existent", quantity: 2 }],
       paymentMethod: "cod" as const,
+      password: "password123",
     };
 
     await expect(
@@ -205,24 +334,36 @@ describe("CreateOrderUseCase", () => {
         orderData,
         mockOrderRepo,
         mockProductRepo,
-        mockCustomerRepo
+        mockUpsertCustomerUC,
+        mockSettingsRepo,
+        mockCustomerRepo,
+        mockCouponRepo
       )
     ).rejects.toThrow(BadRequestError);
     expect(mockOrderRepo.create).not.toHaveBeenCalled();
   });
 
   it("should update existing customer instead of creating", async () => {
-    mockCustomerRepo.findByPhone = mock(() =>
+    mockUpsertCustomerUC.execute = mock(() =>
       Promise.resolve({
         phone: "1234567890",
-        name: "Jane Doe",
-        address: "456 Oak Ave",
+        name: "John Doe",
+        address: "123 Main St",
         points: 50,
-        totalSpent: "200.00",
-        totalOrders: 2,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Customer)
+      } as any)
+    );
+
+    mockOrderRepo.findById = mock(() =>
+      Promise.resolve({
+        id: "new-id",
+        customerName: "John Doe",
+        phone: "1234567890",
+        address: "123 Main St",
+        orderItems: [],
+        total: 100,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      } as Order)
     );
 
     const orderData = {
@@ -231,34 +372,47 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [{ id: "product-1", quantity: 2 }],
       paymentMethod: "cod" as const,
+      password: "password123",
     };
 
     await useCase.execute(
       orderData,
       mockOrderRepo,
       mockProductRepo,
-      mockCustomerRepo
+      mockUpsertCustomerUC,
+      mockSettingsRepo,
+      mockCustomerRepo,
+      mockCouponRepo
     );
 
-    expect(mockCustomerRepo.findByPhone).toHaveBeenCalledWith("1234567890");
-    expect(mockCustomerRepo.update).toHaveBeenCalled();
-    expect(mockCustomerRepo.create).not.toHaveBeenCalled();
+    expect(mockUpsertCustomerUC.execute).toHaveBeenCalled();
+    expect(mockOrderRepo.create).toHaveBeenCalled();
   });
 
   it("should allow optional fields", async () => {
-    // Setup mock to return customer with enough points
-    mockCustomerRepo.findByPhone = mock(() =>
+    mockUpsertCustomerUC.execute = mock(() =>
       Promise.resolve({
         phone: "1234567890",
         name: "John Doe",
         address: "123 Main St",
         points: 200, // Enough points
-        totalSpent: "500.00",
-        totalOrders: 5,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Customer)
+      } as any)
     );
+
+    const createdOrder: Order = {
+      id: "new-id",
+      customerName: "John Doe",
+      phone: "1234567890",
+      address: "123 Main St",
+      orderItems: [],
+      total: 100,
+      status: "pending",
+      pointsUsed: 100,
+      createdAt: new Date().toISOString(),
+    };
+
+    mockOrderRepo.create = mock(() => Promise.resolve(createdOrder));
+    mockOrderRepo.findById = mock(() => Promise.resolve(createdOrder));
 
     const orderData = {
       customerName: "John Doe",
@@ -266,23 +420,26 @@ describe("CreateOrderUseCase", () => {
       address: "123 Main St",
       items: [{ id: "product-1", quantity: 2 }],
       paymentMethod: "cod" as const,
-      subtotal: 90.0,
-      deliveryFee: 10.0,
-      pointsUsed: 100,
-      pointsDiscount: 5.0,
+      password: "password123",
+      pointsToUse: 100,
     };
 
     await useCase.execute(
       orderData,
       mockOrderRepo,
       mockProductRepo,
-      mockCustomerRepo
+      mockUpsertCustomerUC,
+      mockSettingsRepo,
+      mockCustomerRepo,
+      mockCouponRepo
     );
 
     expect(mockOrderRepo.create).toHaveBeenCalled();
-    expect(mockCustomerRepo.findByPhone).toHaveBeenCalledWith("1234567890");
+    expect(mockUpsertCustomerUC.execute).toHaveBeenCalled();
+    // handlePendingStatus is called after order creation, which updates customer points
     expect(mockCustomerRepo.update).toHaveBeenCalledWith("1234567890", {
       pointsDelta: -100,
     });
+    expect(mockSettingsRepo.find).toHaveBeenCalled();
   });
 });
