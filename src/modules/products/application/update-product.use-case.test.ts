@@ -18,14 +18,17 @@ describe("UpdateProductUseCase", () => {
         Promise.resolve({
           id: "1",
           name: "Updated Product",
-          price: "15.00",
-          unit: "kg",
+          price: 15,
           category: "cat-1",
-          image: "https://example.com/img.jpg",
           description: "Updated description",
           stock: 20,
-        })
+          quantityType: "count" as const,
+        } as Product)
       ),
+      findByIds: mock(() => Promise.resolve([])),
+      existsByIds: mock(() => Promise.resolve(false)),
+      updateStock: mock(() => Promise.resolve()),
+      updateStockMany: mock(() => Promise.resolve()),
       delete: mock(() => Promise.resolve()),
     };
   });
@@ -34,21 +37,20 @@ describe("UpdateProductUseCase", () => {
     const existingProduct: Product = {
       id: "1",
       name: "Product 1",
-      price: "10.00",
-      unit: "kg",
+      price: 10,
       category: "cat-1",
-      image: "https://example.com/img1.jpg",
       description: "Description 1",
       stock: 10,
+      quantityType: "count",
     };
 
     mockRepo.findById = mock(() => Promise.resolve(existingProduct));
 
-    const updateData = { name: "Updated Product", price: "15.00" };
+    const updateData = { name: "Updated Product", price: 15 };
     const result = await useCase.execute("1", updateData, mockRepo);
 
-    expect(result.name).toBe("Updated Product");
-    expect(result.price).toBe("15.00");
+    expect(result.product.name).toBe("Updated Product");
+    expect(result.product.price).toBe(15);
     expect(mockRepo.findById).toHaveBeenCalledWith("1");
     expect(mockRepo.update).toHaveBeenCalledWith("1", updateData);
   });
@@ -66,19 +68,18 @@ describe("UpdateProductUseCase", () => {
     const existingProduct: Product = {
       id: "1",
       name: "Product 1",
-      price: "10.00",
-      unit: "kg",
+      price: 10,
       category: "cat-1",
-      image: "https://example.com/img1.jpg",
       description: "Description 1",
       stock: 10,
+      quantityType: "count",
     };
 
     mockRepo.findById = mock(() => Promise.resolve(existingProduct));
 
     const updateData = {
       name: "Updated Product",
-      price: "15.00",
+      price: 15,
       stock: 20,
     };
 
@@ -87,4 +88,3 @@ describe("UpdateProductUseCase", () => {
     expect(mockRepo.update).toHaveBeenCalledWith("1", updateData);
   });
 });
-

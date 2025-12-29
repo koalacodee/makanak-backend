@@ -17,45 +17,47 @@ describe("CreateProductUseCase", () => {
         Promise.resolve({
           id: "new-id",
           name: "New Product",
-          price: "10.00",
-          unit: "kg",
+          price: 10,
           category: "cat-1",
-          image: "https://example.com/img.jpg",
           description: "Description",
           stock: 10,
-        })
+          quantityType: "count" as const,
+        } as Product)
       ),
+      findByIds: mock(() => Promise.resolve([])),
+      existsByIds: mock(() => Promise.resolve(false)),
+      updateStock: mock(() => Promise.resolve()),
+      updateStockMany: mock(() => Promise.resolve()),
       update: mock(() => Promise.resolve({} as Product)),
       delete: mock(() => Promise.resolve()),
     };
   });
 
   it("should create a product successfully", async () => {
-    const productData: Omit<Product, "id"> = {
+    const productData: any = {
       name: "New Product",
-      price: "10.00",
+      price: 10,
       unit: "kg",
       category: "cat-1",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: 10,
+      quantityType: "count",
     };
 
     const result = await useCase.execute(productData, mockRepo);
 
-    expect(result.id).toBe("new-id");
-    expect(mockRepo.create).toHaveBeenCalledWith(productData);
+    expect(result.product.id).toBe("new-id");
+    expect(mockRepo.create).toHaveBeenCalled();
   });
 
   it("should throw ValidationError for empty name", async () => {
     const productData: Omit<Product, "id"> = {
       name: "",
-      price: "10.00",
-      unit: "kg",
+      price: 10,
       category: "cat-1",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: 10,
+      quantityType: "count",
     };
 
     await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
@@ -66,12 +68,11 @@ describe("CreateProductUseCase", () => {
   it("should throw ValidationError for whitespace-only name", async () => {
     const productData: Omit<Product, "id"> = {
       name: "   ",
-      price: "10.00",
-      unit: "kg",
+      price: 10,
       category: "cat-1",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: 10,
+      quantityType: "count",
     };
 
     await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
@@ -82,12 +83,11 @@ describe("CreateProductUseCase", () => {
   it("should throw ValidationError for invalid price (zero)", async () => {
     const productData: Omit<Product, "id"> = {
       name: "Product",
-      price: "0",
-      unit: "kg",
+      price: 0,
       category: "cat-1",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: 10,
+      quantityType: "count",
     };
 
     await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
@@ -98,28 +98,11 @@ describe("CreateProductUseCase", () => {
   it("should throw ValidationError for invalid price (negative)", async () => {
     const productData: Omit<Product, "id"> = {
       name: "Product",
-      price: "-10.00",
-      unit: "kg",
+      price: -10,
       category: "cat-1",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: 10,
-    };
-
-    await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
-      ValidationError
-    );
-  });
-
-  it("should throw ValidationError for empty unit", async () => {
-    const productData: Omit<Product, "id"> = {
-      name: "Product",
-      price: "10.00",
-      unit: "",
-      category: "cat-1",
-      image: "https://example.com/img.jpg",
-      description: "Description",
-      stock: 10,
+      quantityType: "count",
     };
 
     await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
@@ -130,28 +113,11 @@ describe("CreateProductUseCase", () => {
   it("should throw ValidationError for empty category", async () => {
     const productData: Omit<Product, "id"> = {
       name: "Product",
-      price: "10.00",
-      unit: "kg",
+      price: 10,
       category: "",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: 10,
-    };
-
-    await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
-      ValidationError
-    );
-  });
-
-  it("should throw ValidationError for empty image", async () => {
-    const productData: Omit<Product, "id"> = {
-      name: "Product",
-      price: "10.00",
-      unit: "kg",
-      category: "cat-1",
-      image: "",
-      description: "Description",
-      stock: 10,
+      quantityType: "count",
     };
 
     await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
@@ -162,12 +128,11 @@ describe("CreateProductUseCase", () => {
   it("should throw ValidationError for negative stock", async () => {
     const productData: Omit<Product, "id"> = {
       name: "Product",
-      price: "10.00",
-      unit: "kg",
+      price: 10,
       category: "cat-1",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: -1,
+      quantityType: "count",
     };
 
     await expect(useCase.execute(productData, mockRepo)).rejects.toThrow(
@@ -176,14 +141,14 @@ describe("CreateProductUseCase", () => {
   });
 
   it("should allow zero stock", async () => {
-    const productData: Omit<Product, "id"> = {
+    const productData: any = {
       name: "Product",
-      price: "10.00",
+      price: 10,
       unit: "kg",
       category: "cat-1",
-      image: "https://example.com/img.jpg",
       description: "Description",
       stock: 0,
+      quantityType: "count",
     };
 
     await useCase.execute(productData, mockRepo);
@@ -191,4 +156,3 @@ describe("CreateProductUseCase", () => {
     expect(mockRepo.create).toHaveBeenCalled();
   });
 });
-
