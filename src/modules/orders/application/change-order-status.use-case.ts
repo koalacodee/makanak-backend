@@ -36,13 +36,7 @@ export class ChangeOrderStatusUseCase {
 
     // Handle status transitions
     if (newStatus === "ready" && previousStatus !== "ready") {
-      // When order becomes ready: reduce stock, reduce coupon usage, reduce points
-      await ChangeOrderStatusUseCase.handleReadyStatus(
-        existing,
-        productRepo,
-        couponRepo,
-        customerRepo
-      );
+      // When order becomes ready: mark as ready assigning a driver
       await markAsReadyUC.execute(data.id, orderRepo);
     } else if (newStatus === "delivered" && previousStatus !== "delivered") {
       // When order becomes delivered: add points earned, update totalSpent, update totalOrders
@@ -88,52 +82,6 @@ export class ChangeOrderStatusUseCase {
   }
 
   /**
-   * Handle when order status becomes "ready"
-   * - Reduce stock
-   * - Reduce coupon usage by 1
-   * - Reduce points (if points were used)
-   */
-  static async handleReadyStatus(
-    order: Order,
-    productRepo: IProductRepository,
-    couponRepo: ICouponRepository,
-    customerRepo: ICustomerRepository
-  ): Promise<void> {
-    const promises: Promise<any>[] = [
-      // Reduce stock
-      productRepo.updateStockMany(
-        order.orderItems.map((item) => ({
-          id: item.productId,
-          delta: -item.quantity,
-        }))
-      ),
-    ];
-
-    // Reduce coupon usage by 1 (if coupon exists)
-    if (order.couponId) {
-      const coupon = await couponRepo.findById(order.couponId);
-      if (coupon && coupon.remainingUses > 0) {
-        promises.push(
-          couponRepo.update(order.couponId, {
-            remainingUses: coupon.remainingUses - 1,
-          })
-        );
-      }
-    }
-
-    // Reduce points (if points were used)
-    if (order.pointsUsed && order.pointsUsed > 0) {
-      promises.push(
-        customerRepo.update(order.phone, {
-          pointsDelta: -order.pointsUsed,
-        })
-      );
-    }
-
-    await Promise.all(promises);
-  }
-
-  /**
    * Handle when order status becomes "delivered"
    * - Add points earned
    * - Update totalSpent
@@ -174,7 +122,8 @@ export class ChangeOrderStatusUseCase {
     const wasReadyOrBeyond =
       previousStatus === "ready" ||
       previousStatus === "out_for_delivery" ||
-      previousStatus === "delivered";
+      previousStatus === "pending" ||
+      previousStatus === "processing";
     const wasDelivered = previousStatus === "delivered";
 
     const promises: Promise<any>[] = [];

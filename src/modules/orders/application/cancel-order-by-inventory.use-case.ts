@@ -1,14 +1,22 @@
 import type { IOrderRepository } from "../domain/orders.iface";
 import { NotFoundError, BadRequestError } from "@/shared/presentation";
-import filehub from "@/shared/filehub";
-import redis from "@/shared/redis";
 import { Order } from "../domain/order.entity";
+import { ChangeOrderStatusUseCase } from "./change-order-status.use-case";
+import { ICustomerRepository } from "@/modules/customers/domain/customers.iface";
+import { IProductRepository } from "@/modules/products/domain/products.iface";
+import { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
+import { MarkAsReadyUseCase } from "@/modules/drivers/application/mark-as-ready.use-case";
 
 export class CancelOrderByInventoryUseCase {
   async execute(
     orderId: string,
     cancellation: { reason?: string; attachWithFileExtension?: string },
-    orderRepo: IOrderRepository
+    orderRepo: IOrderRepository,
+    changeOrderStatusUC: ChangeOrderStatusUseCase,
+    customerRepo: ICustomerRepository,
+    productRepo: IProductRepository,
+    couponRepo: ICouponRepository,
+    markAsReadyUC: MarkAsReadyUseCase
   ): Promise<{ order: Order; cancellationPutUrl?: string }> {
     const order = await orderRepo.findById(orderId);
 
@@ -28,34 +36,25 @@ export class CancelOrderByInventoryUseCase {
       ]);
     }
 
-    // Directly update order to cancelled status without side effects
-    // Since the order is pending, nothing was done yet (no stock reduction, no coupon usage, no points deduction)
-    const updatedOrder = await orderRepo.update(orderId, {
-      status: "cancelled",
-    });
-
-    let cancellationPutUrl: string | undefined;
-
-    if (cancellation.reason) {
-      const saveCancellation = await orderRepo.saveCancellation({
-        orderId: orderId,
-        reason: cancellation.reason,
-        cancelledBy: "inventory",
-      });
-      if (cancellation.attachWithFileExtension) {
-        const upload = await filehub.getSignedPutUrl(
-          3600 * 24 * 7,
-          cancellation.attachWithFileExtension
-        );
-        cancellationPutUrl = upload.signedUrl;
-        await redis.set(
-          `filehub:${upload.filename}`,
-          saveCancellation.id,
-          "EX",
-          3600 * 24 * 7
-        );
-      }
-    }
+    // Call
+    // This will revert all the changes that were made when the order was created
+    // and restore the deducted stock, coupon usage, and used customer points
+    const { order: updatedOrder, cancellationPutUrl } =
+      await changeOrderStatusUC.execute(
+        {
+          id: orderId,
+          status: "cancelled",
+          cancellation: {
+            reason: cancellation.reason,
+            attachWithFileExtension: cancellation.attachWithFileExtension,
+          },
+        },
+        orderRepo,
+        customerRepo,
+        productRepo,
+        couponRepo,
+        markAsReadyUC
+      );
 
     return { order: updatedOrder, cancellationPutUrl };
   }

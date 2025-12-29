@@ -170,6 +170,13 @@ export class CreateOrderUseCase {
       verificationHash: hash,
     });
 
+    await CreateOrderUseCase.handlePendingStatus(
+      order,
+      productRepo,
+      couponRepo,
+      customerRepo
+    );
+
     let receiptUploadUrl: SignedPutUrl | null = null;
     if (data.paymentMethod == "online") {
       if (!data.attachWithFileExtension) {
@@ -208,5 +215,51 @@ export class CreateOrderUseCase {
       receiptUploadUrl: receiptUploadUrl?.signedUrl,
       verificationCode: code,
     };
+  }
+
+  /**
+   * Handle when order status initially set to "pending"
+   * - Reduce stock
+   * - Reduce coupon usage by 1
+   * - Reduce points (if points were used)
+   */
+  static async handlePendingStatus(
+    order: Order,
+    productRepo: IProductRepository,
+    couponRepo: ICouponRepository,
+    customerRepo: ICustomerRepository
+  ): Promise<void> {
+    const promises: Promise<any>[] = [
+      // Reduce stock
+      productRepo.updateStockMany(
+        order.orderItems.map((item) => ({
+          id: item.productId,
+          delta: -item.quantity,
+        }))
+      ),
+    ];
+
+    // Reduce coupon usage by 1 (if coupon exists)
+    if (order.couponId) {
+      const coupon = await couponRepo.findById(order.couponId);
+      if (coupon && coupon.remainingUses > 0) {
+        promises.push(
+          couponRepo.update(order.couponId, {
+            remainingUses: coupon.remainingUses - 1,
+          })
+        );
+      }
+    }
+
+    // Reduce points (if points were used)
+    if (order.pointsUsed && order.pointsUsed > 0) {
+      promises.push(
+        customerRepo.update(order.phone, {
+          pointsDelta: -order.pointsUsed,
+        })
+      );
+    }
+
+    await Promise.all(promises);
   }
 }

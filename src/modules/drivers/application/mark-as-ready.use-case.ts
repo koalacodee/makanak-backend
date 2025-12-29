@@ -1,9 +1,7 @@
 import type { IOrderRepository } from "../../orders/domain/orders.iface";
 import redis from "@/shared/redis";
 import { BadRequestError, NotFoundError } from "@/shared/presentation";
-import { DriverSocketService } from "../infrastructure/driver-socket.service";
 import { driversIO } from "@/socket.io";
-import { ChangeOrderStatusUseCase } from "@/modules/orders/application/change-order-status.use-case";
 
 export class MarkAsReadyUseCase {
   async execute(

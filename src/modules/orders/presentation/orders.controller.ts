@@ -269,11 +269,26 @@ export const ordersController = new Elysia({ prefix: "/orders" })
   .use(authGuard(["inventory"]))
   .post(
     "/:id/cancel-by-inventory",
-    async ({ params, body, cancelOrderByInventoryUC, orderRepo }) => {
+    async ({
+      params,
+      body,
+      cancelOrderByInventoryUC,
+      orderRepo,
+      changeOrderStatusUC,
+      customerRepo,
+      productRepo,
+      couponRepo,
+      markAsReadyUC,
+    }) => {
       const result = await cancelOrderByInventoryUC.execute(
         params.id,
         body.cancellation,
-        orderRepo
+        orderRepo,
+        changeOrderStatusUC,
+        customerRepo,
+        productRepo,
+        couponRepo,
+        markAsReadyUC
       );
       return {
         order: {
