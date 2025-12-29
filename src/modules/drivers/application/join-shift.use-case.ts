@@ -4,40 +4,40 @@ import type { IOrderRepository } from "../../orders/domain/orders.iface";
 import { assignFirstIdleReadyOrderToFirstIdleDriver } from "./mark-order-as-delivered.use-case";
 
 export class JoinShiftUseCase {
-  async execute(
-    driverId: string,
-    orderRepo: IOrderRepository
-  ): Promise<{
-    success: boolean;
-    readyOrders: (Order & { shouldTake: number | null })[];
-    counts: { status: OrderStatus; count: number }[];
-  }> {
-    await ensureDriverInAvailableDrivers(driverId);
-    const readyOrders = await orderRepo.getReadyOrdersForDriver(driverId);
+	async execute(
+		driverId: string,
+		orderRepo: IOrderRepository,
+	): Promise<{
+		success: boolean;
+		readyOrders: (Order & { shouldTake: number | null })[];
+		counts: { status: OrderStatus; count: number }[];
+	}> {
+		await ensureDriverInAvailableDrivers(driverId);
+		const readyOrders = await orderRepo.getReadyOrdersForDriver(driverId);
 
-    if (readyOrders.orders.length === 0) {
-      const result = await assignFirstIdleReadyOrderToFirstIdleDriver();
-      if (result) {
-        const order = await orderRepo.update(result.orderId, {
-          driverId: result.driverId,
-        });
-        readyOrders.orders.push(order);
-      }
-    }
+		if (readyOrders.orders.length === 0) {
+			const result = await assignFirstIdleReadyOrderToFirstIdleDriver();
+			if (result) {
+				const order = await orderRepo.update(result.orderId, {
+					driverId: result.driverId,
+				});
+				readyOrders.orders.push(order);
+			}
+		}
 
-    return {
-      success: true,
-      readyOrders: readyOrders.orders.map((order) => ({
-        ...order,
-        shouldTake: order.paymentMethod === "cod" ? order.total : null,
-      })),
-      counts: readyOrders.counts,
-    };
-  }
+		return {
+			success: true,
+			readyOrders: readyOrders.orders.map((order) => ({
+				...order,
+				shouldTake: order.paymentMethod === "cod" ? order.total : null,
+			})),
+			counts: readyOrders.counts,
+		};
+	}
 }
 
 async function ensureDriverInAvailableDrivers(driverId: string) {
-  const luaScript = `
+	const luaScript = `
     local driverId = ARGV[1]
     local listKey = KEYS[1]
 
@@ -53,5 +53,5 @@ async function ensureDriverInAvailableDrivers(driverId: string) {
       return 1
     end
   `;
-  await redis.send("EVAL", [luaScript, "1", "available_drivers", driverId]);
+	await redis.send("EVAL", [luaScript, "1", "available_drivers", driverId]);
 }

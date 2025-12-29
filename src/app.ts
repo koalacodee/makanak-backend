@@ -27,7 +27,7 @@ const allowedOrigins = process.env.CORS_ORIGINS
 
 export const app = new Elysia()
   .error(errorDefinitions)
-  .onError(onErrorHandler)
+  .onError(({ error, set, code }) => onErrorHandler({ error, set, code }))
   .use(
     cors({
       credentials: true,

@@ -59,7 +59,7 @@ export class AttachmentRepository implements IAttachmentRepository {
 		id: string,
 		data: Partial<Omit<AttachmentInput, "targetId">>,
 	): Promise<Attachment> {
-		const updateData: any = {};
+		const updateData: { filename?: string; size?: number } = {};
 		if (data.filename !== undefined) updateData.filename = data.filename;
 		if (data.size !== undefined) updateData.size = data.size;
 

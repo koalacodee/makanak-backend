@@ -1,4 +1,4 @@
-import { randomInt, timingSafeEqual } from "crypto";
+import { randomInt, timingSafeEqual } from "node:crypto";
 
 const generateCodeAndHash = () => {
 	const code = randomInt(1000000000, 9999999999).toString();

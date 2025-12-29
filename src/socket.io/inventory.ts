@@ -4,13 +4,22 @@ import type { Order } from "@/modules/orders/presentation/orders.dto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 
+interface SocketData {
+	user?: {
+		sub: string;
+		role: string;
+		exp: number;
+		iat: number;
+	};
+}
+
 export class InventoryIO {
 	// inventoryId -> socketId
 	private io: Namespace<
 		DefaultEventsMap,
 		DefaultEventsMap,
 		DefaultEventsMap,
-		any
+		SocketData
 	>;
 	constructor(io: Server) {
 		this.io = io.of("/inventory");
@@ -41,7 +50,7 @@ export class InventoryIO {
 
 				socket.data.user = payload;
 				next();
-			} catch (error) {
+			} catch (_error) {
 				console.warn("JWT verifying Failed");
 				next(new Error("Invalid Access Token"));
 			}

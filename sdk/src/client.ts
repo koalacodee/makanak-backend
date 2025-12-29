@@ -75,7 +75,7 @@ export class MakanakSDK {
 							}
 
 							// Mark that we need to retry
-							(error as any).shouldRetry = true;
+							(error as Error & { shouldRetry?: boolean }).shouldRetry = true;
 						}
 
 						throw error;
@@ -134,7 +134,9 @@ export class MakanakSDK {
 		// Create a proxy that intercepts method calls
 		return new Proxy(originalClient, {
 			get: (target, prop) => {
-				const originalMethod = (target as any)[prop];
+				const originalMethod = (target as Record<string | symbol, unknown>)[
+					prop
+				];
 
 				// Wrap HTTP methods to handle 401 retries
 				if (
@@ -143,12 +145,24 @@ export class MakanakSDK {
 						prop as string,
 					)
 				) {
-					return async (input: string | URL | Request, options?: any) => {
+					return async (
+						input: string | URL | Request,
+						options?: RequestInit,
+					) => {
 						try {
-							return await originalMethod.call(target, input, options);
-						} catch (error: any) {
+							return await (
+								originalMethod as (
+									input: string | URL | Request,
+									options?: RequestInit,
+								) => Promise<unknown>
+							).call(target, input, options);
+						} catch (error: unknown) {
 							// Check if it's a 401 and we should retry
-							if (error.response?.status === 401 && error.shouldRetry) {
+							const httpError = error as {
+								response?: { status?: number };
+								shouldRetry?: boolean;
+							};
+							if (httpError.response?.status === 401 && httpError.shouldRetry) {
 								try {
 									// Refresh token
 									const newAccessToken = await this.refreshAccessToken();
@@ -162,8 +176,13 @@ export class MakanakSDK {
 										},
 									};
 
-									return await originalMethod.call(target, input, retryOptions);
-								} catch (refreshError) {
+									return await (
+										originalMethod as (
+											input: string | URL | Request,
+											options?: RequestInit,
+										) => Promise<unknown>
+									).call(target, input, retryOptions);
+								} catch (_refreshError) {
 									// Refresh failed, clear tokens
 									this.clearTokens();
 									throw error;

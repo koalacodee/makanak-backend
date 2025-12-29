@@ -15,7 +15,7 @@ const { sdk, api } = createSDK({
 });
 
 // Example: Login
-async function loginExample() {
+async function _loginExample() {
 	try {
 		const response = await api.auth.login({
 			username: "admin",
@@ -33,7 +33,7 @@ async function loginExample() {
 }
 
 // Example: Get products (public endpoint)
-async function getProductsExample() {
+async function _getProductsExample() {
 	try {
 		const products = await api.products.list({ page: 1, limit: 20 });
 		console.log("Products:", products.data);
@@ -43,7 +43,7 @@ async function getProductsExample() {
 }
 
 // Example: Create order (protected endpoint - requires auth)
-async function createOrderExample() {
+async function _createOrderExample() {
 	try {
 		const order = await api.orders.create({
 			customerName: "John Doe",
@@ -53,8 +53,10 @@ async function createOrderExample() {
 			paymentMethod: "cod",
 		});
 		console.log("Order created:", order);
-	} catch (error: any) {
-		if (error.response?.status === 401) {
+	} catch (error: unknown) {
+		if (
+			(error as { response?: { status?: number } })?.response?.status === 401
+		) {
 			console.error("Unauthorized - please login");
 		} else {
 			console.error("Failed to create order:", error);
@@ -63,7 +65,7 @@ async function createOrderExample() {
 }
 
 // Example: Cart operations
-async function cartExample() {
+async function _cartExample() {
 	const phone = "1234567890";
 
 	try {
@@ -95,7 +97,7 @@ async function cartExample() {
 }
 
 // Example: Logout
-async function logoutExample() {
+async function _logoutExample() {
 	try {
 		await api.auth.logout();
 		sdk.clearTokens();

@@ -12,9 +12,13 @@ export class Database {
 
 	public static get instance() {
 		if (!Database._instance) {
+			const databaseUrl = process.env.DATABASE_URL;
+			if (!databaseUrl) {
+				throw new Error("DATABASE_URL environment variable is not set");
+			}
 			Database._instance = drizzle(
 				new SQL({
-					url: process.env.DATABASE_URL!,
+					url: databaseUrl,
 					max: 20, // Maximum number of connections in the pool
 					idleTimeout: 30, // Close idle connections after 30 seconds
 					connectionTimeout: 10, // Timeout for establishing new connections
@@ -28,7 +32,11 @@ export class Database {
 	}
 
 	public static async migrate() {
-		await waitForDatabase(process.env.DATABASE_URL!)
+		const databaseUrl = process.env.DATABASE_URL;
+		if (!databaseUrl) {
+			throw new Error("DATABASE_URL environment variable is not set");
+		}
+		await waitForDatabase(databaseUrl)
 			.then(async () => {
 				await migrate(Database.instance, { migrationsFolder: "drizzle" })
 					.then(() => {
@@ -56,7 +64,7 @@ async function waitForDatabase(url: string, maxAttempts = 10, interval = 3000) {
 			await db`SELECT 1`;
 			console.log("Database is ready!");
 			return true;
-		} catch (error) {
+		} catch (_error) {
 			console.log("Database is not ready yet. Retrying...");
 			attempts++;
 			await new Promise((resolve) => setTimeout(resolve, interval));
