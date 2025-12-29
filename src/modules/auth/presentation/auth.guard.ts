@@ -37,7 +37,6 @@ export const authGuard = (allowedRoles?: UserRole[]) => {
 
       const userId = payload.sub as string;
       const role = (payload.role as UserRole) || undefined;
-      console.log(role);
 
       // Check role if specified
       if (allowedRoles && role && !allowedRoles.includes(role)) {

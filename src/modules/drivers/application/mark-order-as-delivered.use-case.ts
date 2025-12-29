@@ -68,7 +68,7 @@ export class MarkOrderAsDeliveredUseCase {
 
     // Mark the current order as delivered
     await changeOrderStatusUC.execute(
-      { id: orderId, status: "delivered" },
+      { id: orderId, status: "delivered", cancellation: {} },
       orderRepo,
       customerRepo,
       productRepo,

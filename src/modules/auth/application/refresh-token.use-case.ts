@@ -26,8 +26,6 @@ export class RefreshTokenUseCase {
       !("sub" in payload) ||
       typeof payload.sub !== "string"
     ) {
-      console.log(payload);
-
       throw new UnauthorizedError([
         {
           path: "refreshToken",

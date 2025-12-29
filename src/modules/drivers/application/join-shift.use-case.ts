@@ -60,11 +60,4 @@ async function ensureDriverInAvailableDrivers(driverId: string) {
     "available_drivers",
     driverId,
   ]);
-
-  // Handle the result
-  if (result === 1) {
-    console.log(`Driver ${driverId} was added to the list.`);
-  } else {
-    console.log(`Driver ${driverId} is already in the list.`);
-  }
 }

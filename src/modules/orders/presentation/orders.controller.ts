@@ -160,7 +160,6 @@ export const ordersController = new Elysia({ prefix: "/orders" })
         })),
         pagination: result.pagination,
       };
-      console.log(toReturn);
       return toReturn;
     },
     {

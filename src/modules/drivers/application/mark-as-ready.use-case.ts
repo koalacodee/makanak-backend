@@ -24,8 +24,6 @@ export class MarkAsReadyUseCase {
 
     const driverId = await assignDriverAtomic();
 
-    console.log(driverId);
-
     if (driverId) {
       // Update order with driverId
       const updatedOrder = await orderRepo.update(orderId, { driverId });

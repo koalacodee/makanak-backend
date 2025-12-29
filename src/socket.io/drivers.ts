@@ -58,7 +58,6 @@ export class DriversIO {
         socket.disconnect();
         return;
       }
-      console.log("Driver connected", driverId);
       this.driversSockets.set(driverId, socket.id);
     });
 
@@ -69,7 +68,6 @@ export class DriversIO {
         socket.disconnect();
         return;
       }
-      console.log("Driver disconnected", driverId);
       this.driversSockets.delete(driverId);
     });
   }
@@ -78,19 +76,6 @@ export class DriversIO {
     driverId: string,
     readyOrder: ReadyOrderWithShouldTake
   ) {
-    console.log("notifying driver with ready order", driverId);
-    console.log("readyOrder", readyOrder);
-    console.log("driversSockets", this.driversSockets);
-    console.log("io.sockets", this.io.sockets);
-    console.log("io.sockets.get(driverId)", this.io.sockets.get(driverId));
-    console.log(
-      "io.sockets.get(driverId)?.emit('ready_order', readyOrder)",
-      this.io.sockets.get(driverId)?.emit("ready_order", readyOrder)
-    );
-    console.log(
-      "io.sockets.get(driverId)?.emit('ready_order', readyOrder)",
-      this.io.sockets.get(driverId)?.emit("ready_order", readyOrder)
-    );
     const socketId = this.driversSockets.get(driverId);
     if (!socketId) {
       console.warn("Socket not found, Rejecting");
@@ -102,6 +87,5 @@ export class DriversIO {
       return;
     }
     socket.emit("ready_order", readyOrder);
-    console.log("Ready order sent to driver", driverId);
   }
 }
