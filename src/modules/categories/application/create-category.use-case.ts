@@ -19,7 +19,8 @@ export class CreateCategoryUseCase {
         3600 * 24 * 7,
         attachWithFileExtension,
       )
-      const newSignedUrl = await filehub.getSignedUrl(upload.filename)
+      const filename = upload.filename.split('.')[0]
+      const newSignedUrl = await filehub.getSignedUrl(`${filename}.avif`)
       await redis.hset(`filehub:${upload.filename}`, {
         id: cat.id,
         shouldConvertToAvif: '1',

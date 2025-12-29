@@ -75,7 +75,8 @@ export class UpdateProductUseCase {
         3600 * 24 * 7,
         data.attachWithFileExtension,
       )
-      const newSignedUrl = await filehub.getSignedUrl(upload.filename)
+      const filename = upload.filename.split('.')[0]
+      const newSignedUrl = await filehub.getSignedUrl(`${filename}.avif`)
       await redis.hset(`filehub:${upload.filename}`, {
         id: product.id,
         shouldConvertToAvif: '1',
