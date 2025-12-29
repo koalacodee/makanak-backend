@@ -214,11 +214,15 @@ describe("CreateStaffMemberUseCase", () => {
     ).rejects.toThrow(BadRequestError);
     try {
       await useCase.execute(inputData, mockStaffRepo, mockUserRepo);
-    } catch (error: any) {
-      expect(error.details).toBeDefined();
-      expect(error.details[0].message).toBe(
-        "Password must be at least 6 characters"
-      );
+    } catch (error: unknown) {
+      if (error instanceof BadRequestError) {
+        expect(error.details).toBeDefined();
+        expect(error.details[0].message).toBe(
+          "Password must be at least 6 characters"
+        );
+      } else {
+        throw error;
+      }
     }
   });
 
@@ -237,11 +241,15 @@ describe("CreateStaffMemberUseCase", () => {
     ).rejects.toThrow(BadRequestError);
     try {
       await useCase.execute(inputData, mockStaffRepo, mockUserRepo);
-    } catch (error: any) {
-      expect(error.details).toBeDefined();
-      expect(error.details[0].message).toBe(
-        "Password must be at least 6 characters"
-      );
+    } catch (error: unknown) {
+      if (error instanceof BadRequestError) {
+        expect(error.details).toBeDefined();
+        expect(error.details[0].message).toBe(
+          "Password must be at least 6 characters"
+        );
+      } else {
+        throw error;
+      }
     }
   });
 
