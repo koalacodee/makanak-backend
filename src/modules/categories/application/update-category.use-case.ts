@@ -32,12 +32,10 @@ export class UpdateCategoryUseCase {
         data.attachWithFileExtension,
       )
       const newSignedUrl = await filehub.getSignedUrl(upload.filename)
-      await redis.set(
-        `filehub:${upload.filename}`,
-        category.id,
-        'EX',
-        3600 * 24 * 7,
-      )
+      await redis.hset(`filehub:${upload.filename}`, {
+        id: category.id,
+        shouldConvertToAvif: '1',
+      })
       return {
         category: category,
         uploadUrl: upload.signedUrl,

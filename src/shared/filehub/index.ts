@@ -40,6 +40,17 @@ export interface SignedPutUrl {
   expirationDate: Date
 }
 
+export interface ConvertToAvifRequest {
+  objectPath: string
+  deleteOriginal?: boolean
+}
+
+export interface ConvertToAvifResponse {
+  avifObjectPath: string
+  deletedOriginal: boolean
+  size: number
+}
+
 // export type WebhookData = WebhookDataFull | WebhookDataBasic;
 
 export class FileHub {
@@ -176,6 +187,34 @@ export class FileHub {
       console.error(error)
       throw new Error(
         `FileHub signed upload URL request failed: ${response.status} ${response.statusText}`,
+      )
+    }
+    const data = await response.json()
+    return data
+  }
+
+  async convertToAvif(
+    request: ConvertToAvifRequest,
+  ): Promise<ConvertToAvifResponse> {
+    if (!this.apiKey) {
+      throw new Error('FileHub API key is not set')
+    }
+    if (!this.baseUrl) {
+      throw new Error('FileHub base URL is not set')
+    }
+    const response = await fetch(`${this.baseUrl}/images/to-avif`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    })
+    if (!response.ok) {
+      const error = await response.text()
+      console.error(error)
+      throw new Error(
+        `FileHub convert to AVIF request failed: ${response.status} ${response.statusText} - ${error}`,
       )
     }
     const data = await response.json()

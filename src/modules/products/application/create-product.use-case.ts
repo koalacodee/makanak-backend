@@ -66,12 +66,10 @@ export class CreateProductUseCase {
         attachWithFileExtension,
       )
       const newSignedUrl = await filehub.getSignedUrl(upload.filename)
-      await redis.set(
-        `filehub:${upload.filename}`,
-        product.id,
-        'EX',
-        3600 * 24 * 7,
-      )
+      await redis.hset(`filehub:${upload.filename}`, {
+        id: product.id,
+        shouldConvertToAvif: '1',
+      })
       return {
         product,
         uploadUrl: upload.signedUrl,

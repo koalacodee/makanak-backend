@@ -65,12 +65,10 @@ export class ChangeOrderStatusUseCase {
             data.cancellation.attachWithFileExtension,
           )
 
-          await redis.set(
-            `filehub:${upload.filename}`,
-            saveCancellation.id,
-            'EX',
-            3600 * 24 * 7,
-          )
+          await redis.hset(`filehub:${upload.filename}`, {
+            id: saveCancellation.id,
+            shouldConvertToAvif: '1',
+          })
           cancellationPutUrl = upload.signedUrl
         }
       }

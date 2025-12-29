@@ -20,7 +20,10 @@ export class CreateCategoryUseCase {
         attachWithFileExtension,
       )
       const newSignedUrl = await filehub.getSignedUrl(upload.filename)
-      await redis.set(`filehub:${upload.filename}`, cat.id, 'EX', 3600 * 24 * 7)
+      await redis.hset(`filehub:${upload.filename}`, {
+        id: cat.id,
+        shouldConvertToAvif: '1',
+      })
       return {
         category: cat,
         uploadUrl: upload.signedUrl,

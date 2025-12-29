@@ -193,12 +193,10 @@ export class CreateOrderUseCase {
         3600 * 24 * 7,
         data.attachWithFileExtension,
       )
-      await redis.set(
-        `filehub:${receiptUploadUrl.filename}`,
-        order.id,
-        'EX',
-        3600 * 24 * 7,
-      )
+      await redis.hset(`filehub:${receiptUploadUrl.filename}`, {
+        id: order.id,
+        shouldConvertToAvif: '1',
+      })
     }
 
     // No side effects on order creation - all effects happen when status changes

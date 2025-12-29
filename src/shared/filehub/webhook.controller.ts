@@ -4,30 +4,55 @@ import db from '@/drizzle'
 import { attachments } from '@/drizzle/schema'
 import redis from '@/shared/redis'
 import { WebhookDataBasicDTO, WebhookDataFullDTO } from './webhook.dto'
+import filehub from '.'
 export const fileHubWebHookController = new Elysia({
   prefix: '/filehub/webhook',
 }).post(
   '/uploaded',
   async ({ body }) => {
     if (body.event === 'upload_completed') {
-      const targetId = await redis.get(`filehub:${body.objectPath}`)
-      if (!targetId) {
+      const target = await redis.hgetall(`filehub:${body.objectPath}`)
+      if (!target) {
         console.error(`Target not found: ${body.objectPath}`)
         // return new Response("Target not found", { status: 404 });
         return
       }
-      await upsertAttachment(targetId, body.objectPath, body.size)
+      let data = body
+      if (target.shouldConvertToAvif === '1') {
+        const avif = await filehub.convertToAvif({
+          objectPath: body.objectPath,
+          deleteOriginal: true,
+        })
+        data = {
+          ...data,
+          objectPath: avif.avifObjectPath,
+          size: avif.size,
+        }
+      }
+      await upsertAttachment(target.id, data.objectPath, data.size)
     } else if (body.event === 'tus_completed') {
-      const targetId = await redis.get(`filehub:${body.upload.uploadKey}`)
-      if (!targetId) {
+      const target = await redis.hgetall(`filehub:${body.upload.uploadKey}`)
+      if (!target) {
         // return new Response("Target not found", { status: 404 });
         console.error(`Target not found: ${body.upload.uploadKey}`)
         return
       }
+      let data = body.upload
+      if (target.shouldConvertToAvif === '1') {
+        const avif = await filehub.convertToAvif({
+          objectPath: body.upload.filePath ?? '',
+          deleteOriginal: true,
+        })
+        data = {
+          ...data,
+          filePath: avif.avifObjectPath,
+          uploadLength: avif.size,
+        }
+      }
       await upsertAttachment(
-        targetId,
-        body.upload.filePath ?? '',
-        body.upload.uploadLength ?? 0,
+        target.id,
+        data.filePath ?? '',
+        data.uploadLength ?? 0,
       )
     }
     return {
