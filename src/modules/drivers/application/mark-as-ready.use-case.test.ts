@@ -1,13 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { MarkAsReadyUseCase } from "./mark-as-ready.use-case";
-import type { IOrderRepository } from "../../orders/domain/orders.iface";
-import type { Order } from "../../orders/domain/order.entity";
-import {
-  NotFoundError,
-  BadRequestError,
-} from "../../../shared/presentation/errors";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import redis from "@/shared/redis";
 import { driversIO } from "@/socket.io";
+import {
+  BadRequestError,
+  NotFoundError,
+} from "../../../shared/presentation/errors";
+import type {
+  Order,
+  OrderCancellation,
+} from "../../orders/domain/order.entity";
+import type { IOrderRepository } from "../../orders/domain/orders.iface";
+import { MarkAsReadyUseCase } from "./mark-as-ready.use-case";
 
 describe("MarkAsReadyUseCase", () => {
   let useCase: MarkAsReadyUseCase;
@@ -27,7 +30,7 @@ describe("MarkAsReadyUseCase", () => {
         Promise.resolve({ orders: [], counts: [] })
       ),
       count: mock(() => Promise.resolve(0)),
-      saveCancellation: mock(() => Promise.resolve({} as any)),
+      saveCancellation: mock(() => Promise.resolve({} as OrderCancellation)),
     };
     originalSend = redis.send;
     originalRpush = redis.rpush;

@@ -1,15 +1,15 @@
-import { eq, ilike, or, sql } from "drizzle-orm";
+import { eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import type db from "../../../drizzle";
 import { customers } from "../../../drizzle/schema";
-import db from "../../../drizzle";
-import type { ICustomerRepository } from "../domain/customers.iface";
+import { NotFoundError } from "../../../shared/presentation/errors";
 import type {
   Customer,
   CustomerInput,
-  CustomerUpdateInput,
   CustomerPointsInfo,
+  CustomerUpdateInput,
 } from "../domain/customer.entity";
-import { NotFoundError } from "../../../shared/presentation/errors";
-import { GetCustomersListQuery } from "../presentation/customers.dto";
+import type { ICustomerRepository } from "../domain/customers.iface";
+import type { GetCustomersListQuery } from "../presentation/customers.dto";
 
 export class CustomerRepository implements ICustomerRepository {
   constructor(private database: typeof db) {}
@@ -53,7 +53,14 @@ export class CustomerRepository implements ICustomerRepository {
       ]);
     }
 
-    const updateData: any = {
+    const updateData: {
+      name?: string | null;
+      address?: string | null;
+      points?: number | SQL<unknown>;
+      totalSpent?: string | SQL<unknown>;
+      totalOrders?: number | SQL<unknown>;
+      updatedAt: Date;
+    } = {
       updatedAt: new Date(),
     };
 
@@ -103,7 +110,11 @@ export class CustomerRepository implements ICustomerRepository {
 
     if (existing) {
       // Update existing customer
-      const updateData: any = {
+      const updateData: {
+        name?: string | null;
+        address?: string | null;
+        updatedAt: Date;
+      } = {
         updatedAt: new Date(),
       };
 

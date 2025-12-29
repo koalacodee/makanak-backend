@@ -1,26 +1,24 @@
+import cors from "@elysiajs/cors";
+import openapi from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import {
-  errorHandler,
-  onErrorHandler,
-  errorDefinitions,
-} from "./shared/presentation/error-handler";
 import { authController } from "./modules/auth";
-import { productsController } from "./modules/products";
+import { cartController } from "./modules/cart";
 import { categoriesController } from "./modules/categories";
+import { couponController } from "./modules/coupons";
+import { customersController } from "./modules/customers";
+import { driversController } from "./modules/drivers";
 import { ordersController } from "./modules/orders";
+import { overviewController } from "./modules/overview";
+import { productsController } from "./modules/products";
+import { settingsController } from "./modules/settings";
 import { staffController } from "./modules/staff";
 import { suppliersController } from "./modules/suppliers";
-import { settingsController } from "./modules/settings";
-import { customersController } from "./modules/customers";
-import { cartController } from "./modules/cart";
-import { driversController } from "./modules/drivers";
-import { overviewController } from "./modules/overview";
-import { couponController } from "./modules/coupons";
 import { fileHubWebHookController } from "./shared/filehub/webhook.controller";
-import openapi from "@elysiajs/openapi";
-import cors from "@elysiajs/cors";
-import { rateLimit } from "elysia-rate-limit";
-import { RedisContext } from "./shared/rate-limit";
+import {
+  errorDefinitions,
+  errorHandler,
+  onErrorHandler,
+} from "./shared/presentation/error-handler";
 
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS

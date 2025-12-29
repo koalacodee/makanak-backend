@@ -1,8 +1,7 @@
-import type { IOrderRepository } from "../../orders/domain/orders.iface";
-import { BadRequestError } from "@/shared/presentation";
+import type { Order, OrderStatus } from "@/modules/orders/domain/order.entity";
 import redis from "@/shared/redis";
+import type { IOrderRepository } from "../../orders/domain/orders.iface";
 import { assignFirstIdleReadyOrderToFirstIdleDriver } from "./mark-order-as-delivered.use-case";
-import { Order, OrderStatus } from "@/modules/orders/domain/order.entity";
 
 export class JoinShiftUseCase {
   async execute(
@@ -54,10 +53,5 @@ async function ensureDriverInAvailableDrivers(driverId: string) {
       return 1
     end
   `;
-  const result = await redis.send("EVAL", [
-    luaScript,
-    "1",
-    "available_drivers",
-    driverId,
-  ]);
+  await redis.send("EVAL", [luaScript, "1", "available_drivers", driverId]);
 }

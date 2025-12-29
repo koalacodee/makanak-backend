@@ -1,14 +1,13 @@
 import { Elysia, t } from "elysia";
-import { driversModule } from "../infrastructure/drivers.module";
 import { authGuard } from "@/modules/auth";
-import {
-  SuccessResponseDto,
-  MarkAsReadyResponseDto,
-  JoinShiftResponseDto,
-} from "./drivers.dto";
-import { driverSocketService } from "../infrastructure/driver-socket.service";
-import { Order } from "@/modules/orders/domain/order.entity";
 import { OrderDto } from "@/modules/orders/presentation/orders.dto";
+import { driverSocketService } from "../infrastructure/driver-socket.service";
+import { driversModule } from "../infrastructure/drivers.module";
+import {
+  JoinShiftResponseDto,
+  MarkAsReadyResponseDto,
+  SuccessResponseDto,
+} from "./drivers.dto";
 
 export const driversController = new Elysia({ prefix: "/driver" })
   .use(driversModule)
@@ -35,7 +34,7 @@ export const driversController = new Elysia({ prefix: "/driver" })
                 };
               }
             }
-          } catch (error) {
+          } catch (_error) {
             // Token verification failed
             return { driverId: null, session: null };
           }
@@ -59,8 +58,6 @@ export const driversController = new Elysia({ prefix: "/driver" })
       if (!driverId || !session) {
         return ws.close(1008, "Unauthorized");
       }
-
-      driverSocketService.addDriverSocket(driverId, ws as any);
     },
     async close(ws) {
       const { driverId } = ws.data as {

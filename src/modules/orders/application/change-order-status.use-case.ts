@@ -1,12 +1,14 @@
-import { ICustomerRepository } from "@/modules/customers/domain/customers.iface";
-import { Order, OrderStatus } from "../domain/order.entity";
-import { IOrderRepository } from "../domain/orders.iface";
-import { IProductRepository } from "@/modules/products/domain/products.iface";
-import { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
-import { NotFoundError } from "@/shared/presentation";
-import { MarkAsReadyUseCase } from "@/modules/drivers/application/mark-as-ready.use-case";
+import type { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
+import type { ICustomerRepository } from "@/modules/customers/domain/customers.iface";
+import type { MarkAsReadyUseCase } from "@/modules/drivers/application/mark-as-ready.use-case";
+import type { IProductRepository } from "@/modules/products/domain/products.iface";
 import filehub from "@/shared/filehub";
+import { NotFoundError } from "@/shared/presentation";
 import redis from "@/shared/redis";
+import type { Order, OrderStatus } from "../domain/order.entity";
+import type { IOrderRepository } from "../domain/orders.iface";
+import type { Coupon } from "@/modules/coupons/domain/coupon.entity";
+import type { Customer } from "@/modules/customers/domain/customer.entity";
 
 export class ChangeOrderStatusUseCase {
   async execute(
@@ -126,7 +128,8 @@ export class ChangeOrderStatusUseCase {
       previousStatus === "processing";
     const wasDelivered = previousStatus === "delivered";
 
-    const promises: Promise<any>[] = [];
+    const promises: Array<Promise<void> | Promise<Coupon> | Promise<Customer>> =
+      [];
 
     if (wasReadyOrBeyond) {
       // Restore stock

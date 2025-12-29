@@ -1,12 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { TakeOrderUseCase } from "./take-order.use-case";
-import type { IOrderRepository } from "../../orders/domain/orders.iface";
-import type { Order } from "../../orders/domain/order.entity";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import redis from "@/shared/redis";
 import {
   NotFoundError,
   UnauthorizedError,
 } from "../../../shared/presentation/errors";
-import redis from "@/shared/redis";
+import type {
+  Order,
+  OrderCancellation,
+} from "../../orders/domain/order.entity";
+import type { IOrderRepository } from "../../orders/domain/orders.iface";
+import { TakeOrderUseCase } from "./take-order.use-case";
 
 describe("TakeOrderUseCase", () => {
   let useCase: TakeOrderUseCase;
@@ -25,7 +28,7 @@ describe("TakeOrderUseCase", () => {
         Promise.resolve({ orders: [], counts: [] })
       ),
       count: mock(() => Promise.resolve(0)),
-      saveCancellation: mock(() => Promise.resolve({} as any)),
+      saveCancellation: mock(() => Promise.resolve({} as OrderCancellation)),
     };
     originalSadd = redis.sadd;
     originalLrem = redis.lrem;

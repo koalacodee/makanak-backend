@@ -1,21 +1,26 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { MarkOrderAsDeliveredUseCase } from "./mark-order-as-delivered.use-case";
-import type { IOrderRepository } from "../../orders/domain/orders.iface";
-import type { IProductRepository } from "../../products/domain/products.iface";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import redis from "@/shared/redis";
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+  TooManyRequestsError,
+  UnauthorizedError,
+} from "../../../shared/presentation/errors";
 import type { ICouponRepository } from "../../coupons/domain/coupon.iface";
 import type { ICustomerRepository } from "../../customers/domain/customers.iface";
-import type { Order } from "../../orders/domain/order.entity";
-import {
-  NotFoundError,
-  UnauthorizedError,
-  ForbiddenError,
-  BadRequestError,
-  TooManyRequestsError,
-} from "../../../shared/presentation/errors";
-import { ChangeOrderStatusUseCase } from "../../orders/application/change-order-status.use-case";
-import { MarkAsReadyUseCase } from "./mark-as-ready.use-case";
-
-import redis from "@/shared/redis";
+import type { ChangeOrderStatusUseCase } from "../../orders/application/change-order-status.use-case";
+import type {
+  Order,
+  OrderCancellation,
+} from "../../orders/domain/order.entity";
+import type { IOrderRepository } from "../../orders/domain/orders.iface";
+import type { IProductRepository } from "../../products/domain/products.iface";
+import type { MarkAsReadyUseCase } from "./mark-as-ready.use-case";
+import { MarkOrderAsDeliveredUseCase } from "./mark-order-as-delivered.use-case";
+import type { Product } from "@/modules/products/domain/product.entity";
+import type { Coupon } from "@/modules/coupons/domain/coupon.entity";
+import type { Customer } from "@/modules/customers/domain/customer.entity";
 
 describe("MarkOrderAsDeliveredUseCase", () => {
   let useCase: MarkOrderAsDeliveredUseCase;
@@ -42,40 +47,40 @@ describe("MarkOrderAsDeliveredUseCase", () => {
         Promise.resolve({ orders: [], counts: [] })
       ),
       count: mock(() => Promise.resolve(0)),
-      saveCancellation: mock(() => Promise.resolve({} as any)),
+      saveCancellation: mock(() => Promise.resolve({} as OrderCancellation)),
     };
     mockProductRepo = {
       findAll: mock(() => Promise.resolve({ data: [], total: 0 })),
       findById: mock(() => Promise.resolve(null)),
-      create: mock(() => Promise.resolve({} as any)),
-      update: mock(() => Promise.resolve({} as any)),
+      create: mock(() => Promise.resolve({} as Product)),
+      update: mock(() => Promise.resolve({} as Product)),
       delete: mock(() => Promise.resolve()),
       findByIds: mock(() => Promise.resolve([])),
       existsByIds: mock(() => Promise.resolve(false)),
-      updateStock: mock(() => Promise.resolve({} as any)),
-      updateStockMany: mock(() => Promise.resolve({} as any)),
+      updateStock: mock(() => Promise.resolve()),
+      updateStockMany: mock(() => Promise.resolve()),
     };
     mockCouponRepo = {
       findAll: mock(() => Promise.resolve([])),
       findById: mock(() => Promise.resolve(null)),
       findByName: mock(() => Promise.resolve(null)),
-      create: mock(() => Promise.resolve({} as any)),
-      update: mock(() => Promise.resolve({} as any)),
+      create: mock(() => Promise.resolve({} as Coupon)),
+      update: mock(() => Promise.resolve({} as Coupon)),
       delete: mock(() => Promise.resolve()),
     };
     mockCustomerRepo = {
       findByPhone: mock(() => Promise.resolve(null)),
-      create: mock(() => Promise.resolve({} as any)),
-      update: mock(() => Promise.resolve({} as any)),
-      changePassword: mock(() => Promise.resolve({} as any)),
-      upsert: mock(() => Promise.resolve({} as any)),
+      create: mock(() => Promise.resolve({} as Customer)),
+      update: mock(() => Promise.resolve({} as Customer)),
+      changePassword: mock(() => Promise.resolve({} as Customer)),
+      upsert: mock(() => Promise.resolve({} as Customer)),
       getPointsInfo: mock(() => Promise.resolve(null)),
       findAll: mock(() => Promise.resolve([])),
     };
     mockChangeOrderStatusUC = {
       execute: mock(() => Promise.resolve({ order: {} as Order })),
-    } as any;
-    mockMarkAsReadyUC = {} as any;
+    } as unknown as ChangeOrderStatusUseCase;
+    mockMarkAsReadyUC = {} as MarkAsReadyUseCase;
     originalGet = redis.get;
     originalSetex = redis.setex;
     originalSrem = redis.srem;

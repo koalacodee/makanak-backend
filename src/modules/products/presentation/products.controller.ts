@@ -1,5 +1,5 @@
-import { Elysia } from "elysia";
-import { t } from "elysia";
+import { Elysia, t } from "elysia";
+import { authGuard } from "@/modules/auth";
 import { productsModule } from "../infrastructure/products.module";
 import {
   ProductDto,
@@ -7,7 +7,7 @@ import {
   ProductQueryDto,
   ProductsResponseDto,
 } from "./products.dto";
-import { authGuard } from "@/modules/auth";
+import type { Product } from "../domain/product.entity";
 
 export const productsController = new Elysia({ prefix: "/products" })
   .use(productsModule)
@@ -105,15 +105,15 @@ export const productsController = new Elysia({ prefix: "/products" })
   .put(
     "/:id",
     async ({ params, body, updateProductUC, productRepo }) => {
-      const updateData: any = {};
+      const updateData: Partial<Omit<Product, "id">> = {};
       if (body.name !== undefined) updateData.name = body.name;
-      if (body.price !== undefined) updateData.price = body.price.toString();
+      if (body.price !== undefined) updateData.price = body.price;
       if (body.category !== undefined) updateData.category = body.category;
       if (body.description !== undefined)
         updateData.description = body.description;
       if (body.stock !== undefined) updateData.stock = body.stock;
       if (body.originalPrice !== undefined)
-        updateData.originalPrice = body.originalPrice.toString();
+        updateData.originalPrice = body.originalPrice;
       if (body.quantityType !== undefined)
         updateData.quantityType = body.quantityType;
       if (body.unitOfMeasurement !== undefined)

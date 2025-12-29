@@ -1,5 +1,5 @@
-import { Elysia } from "elysia";
-import { t } from "elysia";
+import { Elysia, t } from "elysia";
+import { authGuard } from "../../auth/presentation/auth.guard";
 import { categoriesModule } from "../infrastructure/categories.module";
 import {
   CategoryDto,
@@ -7,7 +7,7 @@ import {
   CategoryQueryDto,
   CategoryWithProductsDto,
 } from "./categories.dto";
-import { authGuard } from "../../auth/presentation/auth.guard";
+import type { Category } from "../domain/category.entity";
 
 export const categoriesController = new Elysia({ prefix: "/categories" })
   .use(categoriesModule)
@@ -98,7 +98,7 @@ export const categoriesController = new Elysia({ prefix: "/categories" })
   .put(
     "/:id",
     async ({ params, body, updateCategoryUC, categoryRepo }) => {
-      const updateData: any = {};
+      const updateData: Partial<Omit<Category, "id">> = {};
       if (body.name !== undefined) updateData.name = body.name;
       if (body.icon !== undefined) updateData.icon = body.icon;
       if (body.color !== undefined) updateData.color = body.color;

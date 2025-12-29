@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { GetOrdersUseCase } from "./get-orders.use-case";
-import type { IOrderRepository } from "../domain/orders.iface";
-import type { IAttachmentRepository } from "@/shared/attachments";
-import type { Order } from "../domain/order.entity";
-import type { Attachment } from "@/shared/attachments";
-import { ValidationError } from "../../../shared/presentation/errors";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import type { Attachment, IAttachmentRepository } from "@/shared/attachments";
 import filehub from "@/shared/filehub";
+import { ValidationError } from "../../../shared/presentation/errors";
+import type { Order, OrderCancellation } from "../domain/order.entity";
+import type { IOrderRepository } from "../domain/orders.iface";
+import { GetOrdersUseCase } from "./get-orders.use-case";
 
 describe("GetOrdersUseCase", () => {
   let useCase: GetOrdersUseCase;
@@ -24,7 +23,7 @@ describe("GetOrdersUseCase", () => {
         Promise.resolve({ orders: [], counts: [] })
       ),
       count: mock(() => Promise.resolve(0)),
-      saveCancellation: mock(() => Promise.resolve({} as any)),
+      saveCancellation: mock(() => Promise.resolve({} as OrderCancellation)),
     };
     mockAttachmentRepo = {
       findById: mock(() => Promise.resolve(null)),

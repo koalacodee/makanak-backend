@@ -1,18 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { CreateOrderUseCase } from "./create-order.use-case";
-import type { IOrderRepository } from "../domain/orders.iface";
-import type { IProductRepository } from "../../products/domain/products.iface";
-import type { ICustomerRepository } from "../../customers/domain/customers.iface";
-import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
-import type { Order } from "../domain/order.entity";
-import type { Product } from "../../products/domain/product.entity";
-import type { Customer } from "../../customers/domain/customer.entity";
-import { BadRequestError } from "../../../shared/presentation/errors";
-import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
+import type { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
+import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
 import filehub from "@/shared/filehub";
 import redis from "@/shared/redis";
 import { inventoryIO } from "@/socket.io";
+import { BadRequestError } from "../../../shared/presentation/errors";
+import type { Customer } from "../../customers/domain/customer.entity";
+import type { ICustomerRepository } from "../../customers/domain/customers.iface";
+import type { Product } from "../../products/domain/product.entity";
+import type { IProductRepository } from "../../products/domain/products.iface";
+import type { Order, OrderCancellation } from "../domain/order.entity";
+import type { IOrderRepository } from "../domain/orders.iface";
+import { CreateOrderUseCase } from "./create-order.use-case";
+import type { StoreSettings } from "@/modules/settings/domain/settings.entity";
+import type { Coupon } from "@/modules/coupons/domain/coupon.entity";
 
 describe("CreateOrderUseCase", () => {
   let useCase: CreateOrderUseCase;
@@ -48,7 +50,7 @@ describe("CreateOrderUseCase", () => {
         Promise.resolve({ orders: [], counts: [] })
       ),
       count: mock(() => Promise.resolve(0)),
-      saveCancellation: mock(() => Promise.resolve({} as any)),
+      saveCancellation: mock(() => Promise.resolve({} as OrderCancellation)),
     };
 
     mockProductRepo = {
@@ -115,18 +117,18 @@ describe("CreateOrderUseCase", () => {
             value: 10,
             redemptionValue: 0.1,
           },
-        } as any)
+        } as StoreSettings)
       ),
-      update: mock(() => Promise.resolve({} as any)),
-      create: mock(() => Promise.resolve({} as any)),
+      update: mock(() => Promise.resolve({} as StoreSettings)),
+      create: mock(() => Promise.resolve({} as StoreSettings)),
     };
 
     mockCouponRepo = {
       findAll: mock(() => Promise.resolve([])),
       findById: mock(() => Promise.resolve(null)),
       findByName: mock(() => Promise.resolve(null)),
-      create: mock(() => Promise.resolve({} as any)),
-      update: mock(() => Promise.resolve({} as any)),
+      create: mock(() => Promise.resolve({} as Coupon)),
+      update: mock(() => Promise.resolve({} as Coupon)),
       delete: mock(() => Promise.resolve()),
     };
 
@@ -137,9 +139,9 @@ describe("CreateOrderUseCase", () => {
           name: "John Doe",
           address: "123 Main St",
           points: 0,
-        } as any)
+        } as Customer)
       ),
-    } as any;
+    } as UpsertCustomerUseCase;
 
     originalGetSignedPutUrl = filehub.getSignedPutUrl;
     originalSet = redis.set;
@@ -350,7 +352,7 @@ describe("CreateOrderUseCase", () => {
         name: "John Doe",
         address: "123 Main St",
         points: 50,
-      } as any)
+      } as Customer)
     );
 
     mockOrderRepo.findById = mock(() =>
@@ -396,7 +398,7 @@ describe("CreateOrderUseCase", () => {
         name: "John Doe",
         address: "123 Main St",
         points: 200, // Enough points
-      } as any)
+      } as Customer)
     );
 
     const createdOrder: Order = {

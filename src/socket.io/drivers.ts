@@ -1,18 +1,13 @@
-import { DefaultEventsMap, Namespace, Server } from "socket.io";
 import * as jose from "jose";
-import { ReadyOrderWithShouldTake } from "@/modules/drivers/presentation/drivers.dto";
+import type { DefaultEventsMap, Namespace, Server } from "socket.io";
+import type { ReadyOrderWithShouldTake } from "@/modules/drivers/presentation/drivers.dto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 
 export class DriversIO {
   // driverId -> socketId
   private driversSockets = new Map<string, string>();
-  private io: Namespace<
-    DefaultEventsMap,
-    DefaultEventsMap,
-    DefaultEventsMap,
-    any
-  >;
+  private io: Namespace<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap>;
   constructor(io: Server) {
     this.io = io.of("/drivers");
 
@@ -44,7 +39,7 @@ export class DriversIO {
         socket.data.user = payload;
         this.driversSockets.set(payload.sub, socket.id);
         next();
-      } catch (error) {
+      } catch (_error) {
         console.warn("JWT verifying Failed");
         next(new Error("Invalid Access Token"));
       }

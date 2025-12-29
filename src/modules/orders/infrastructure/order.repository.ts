@@ -1,28 +1,29 @@
-import { eq, and, desc, count, inArray, ilike, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import type {
+  QuantityType,
+  UnitOfMeasurement,
+} from "@/modules/products/presentation/products.dto";
+import type db from "../../../drizzle";
 import {
-  orders,
-  orderItems,
-  products,
   orderCancellation,
+  orderItems,
+  orders,
+  products,
 } from "../../../drizzle/schema";
-import db from "../../../drizzle";
-import type { IOrderRepository } from "../domain/orders.iface";
 import type {
   Order,
   OrderCancellation,
   OrderItem,
   OrderStatus,
+  PaymentMethod,
 } from "../domain/order.entity";
-import {
-  QuantityType,
-  UnitOfMeasurement,
-} from "@/modules/products/presentation/products.dto";
+import type { IOrderRepository } from "../domain/orders.iface";
 
 export class OrderRepository implements IOrderRepository {
   constructor(private database: typeof db) {}
 
   async findAll(filters: {
-    status?: string;
+    status?: OrderStatus;
     driverId?: string;
     page?: number;
     limit?: number;
@@ -34,7 +35,7 @@ export class OrderRepository implements IOrderRepository {
 
     const conditions = [];
     if (filters.status) {
-      conditions.push(eq(orders.status, filters.status as any));
+      conditions.push(eq(orders.status, filters.status));
     }
     if (filters.driverId) {
       conditions.push(eq(orders.driverId, filters.driverId));
@@ -138,7 +139,7 @@ export class OrderRepository implements IOrderRepository {
     items: Array<{ productId: string; quantity: number }>;
     subtotal?: string;
     deliveryFee?: string;
-    paymentMethod: string;
+    paymentMethod: PaymentMethod;
     pointsUsed?: number;
     pointsDiscount?: string;
     pointsEarned?: number;
@@ -174,7 +175,7 @@ export class OrderRepository implements IOrderRepository {
           deliveryFee: data.deliveryFee || null,
           total,
           status: "pending",
-          paymentMethod: data.paymentMethod as any,
+          paymentMethod: data.paymentMethod,
           pointsUsed: data.pointsUsed || 0,
           pointsDiscount: data.pointsDiscount || "0",
           pointsEarned: data.pointsEarned || 0,
@@ -219,7 +220,7 @@ export class OrderRepository implements IOrderRepository {
         orderId: orderId,
         productId: item.productId,
         quantity: item.quantity.toString(),
-        price: productById.get(item.productId)!.price ?? "0",
+        price: productById.get(item.productId)?.price ?? "0",
       }));
 
       // 6.  One INSERT … RETURNING *  (bulk)
@@ -232,11 +233,11 @@ export class OrderRepository implements IOrderRepository {
         order,
         insertedRows: insertedRows.map((row) => ({
           ...row,
-          productName: productById.get(row.productId)!.name,
-          productStock: productById.get(row.productId)!.stock,
-          quantityType: productById.get(row.productId)!.quantityType,
+          productName: productById.get(row.productId)?.name ?? "",
+          productStock: productById.get(row.productId)?.stock ?? "0",
+          quantityType: productById.get(row.productId)?.quantityType ?? "count",
           unitOfMeasurement:
-            productById.get(row.productId)!.unitOfMeasurement ?? undefined,
+            productById.get(row.productId)?.unitOfMeasurement ?? undefined,
         })),
       };
     });
@@ -338,13 +339,13 @@ export class OrderRepository implements IOrderRepository {
       subtotal: row.subtotal ? parseFloat(row.subtotal) : undefined,
       deliveryFee: row.deliveryFee ? parseFloat(row.deliveryFee) : undefined,
       total: row.total ? parseFloat(row.total) : 0,
-      status: row.status as any,
+      status: row.status,
       driverId: row.driverId || undefined,
       createdAt: row.createdAt
         ? row.createdAt.toISOString()
         : new Date().toISOString(),
       deliveredAt: row.deliveredAt ? row.deliveredAt.toISOString() : undefined,
-      paymentMethod: (row.paymentMethod as any) || null,
+      paymentMethod: row.paymentMethod || undefined,
       pointsUsed: row.pointsUsed || undefined,
       pointsDiscount: row.pointsDiscount || undefined,
       pointsEarned: row.pointsEarned || undefined,
@@ -361,9 +362,8 @@ export class OrderRepository implements IOrderRepository {
   }
 
   private mapOrderItemToEntity(
-    row:
-      | typeof orderItems.$inferSelect
-      | (typeof orderItems.$inferSelect & Record<string, any>),
+    row: typeof orderItems.$inferSelect,
+    // | (typeof orderItems.$inferSelect & Record<string, any>),
     product: {
       name: string;
       stock: number;
@@ -384,7 +384,7 @@ export class OrderRepository implements IOrderRepository {
       id: row.id,
       orderId: row.orderId,
       productId: row.productId,
-      quantity: isNaN(parsedQuantity) ? 0 : parsedQuantity,
+      quantity: Number.isNaN(parsedQuantity) ? 0 : parsedQuantity,
       price: parseFloat(row.price || "0"),
       productName: product.name,
       productStock:
@@ -406,7 +406,7 @@ export class OrderRepository implements IOrderRepository {
       reason: row.reason,
       createdAt: row.createdAt?.toISOString() || "",
       updatedAt: row.updatedAt?.toISOString() || "",
-      cancelledBy: row.cancelledBy as any,
+      cancelledBy: row.cancelledBy || "driver",
     };
   }
 

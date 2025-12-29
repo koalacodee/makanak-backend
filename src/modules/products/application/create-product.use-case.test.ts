@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
-import { CreateProductUseCase } from "./create-product.use-case";
-import type { IProductRepository } from "../domain/products.iface";
-import type { Product } from "../domain/product.entity";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { ValidationError } from "../../../shared/presentation/errors";
+import type { Product } from "../domain/product.entity";
+import type { IProductRepository } from "../domain/products.iface";
+import { CreateProductUseCase } from "./create-product.use-case";
 
 describe("CreateProductUseCase", () => {
   let useCase: CreateProductUseCase;
@@ -34,10 +34,10 @@ describe("CreateProductUseCase", () => {
   });
 
   it("should create a product successfully", async () => {
-    const productData: any = {
+    const productData: Omit<Product, "id"> = {
       name: "New Product",
       price: 10,
-      unit: "kg",
+      unitOfMeasurement: "kg",
       category: "cat-1",
       description: "Description",
       stock: 10,
@@ -141,10 +141,10 @@ describe("CreateProductUseCase", () => {
   });
 
   it("should allow zero stock", async () => {
-    const productData: any = {
+    const productData: Omit<Product, "id"> = {
       name: "Product",
       price: 10,
-      unit: "kg",
+      unitOfMeasurement: "kg",
       category: "cat-1",
       description: "Description",
       stock: 0,

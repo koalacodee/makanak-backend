@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
-import { GetCustomerPointsUseCase } from "./get-customer-points.use-case";
-import type { ICustomerRepository } from "../domain/customers.iface";
-import type { Customer, CustomerPointsInfo } from "../domain/customer.entity";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   NotFoundError,
   UnauthorizedError,
 } from "../../../shared/presentation/errors";
+import type { Customer } from "../domain/customer.entity";
+import type { ICustomerRepository } from "../domain/customers.iface";
+import { GetCustomerPointsUseCase } from "./get-customer-points.use-case";
 
 describe("GetCustomerPointsUseCase", () => {
   let useCase: GetCustomerPointsUseCase;

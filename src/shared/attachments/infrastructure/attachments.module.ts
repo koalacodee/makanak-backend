@@ -3,5 +3,5 @@ import db from "../../../drizzle";
 import { AttachmentRepository } from "./attachment.repository";
 
 export const attachmentsModule = new Elysia({
-  name: "attachmentsModule",
+	name: "attachmentsModule",
 }).decorate("attachmentRepo", new AttachmentRepository(db));

@@ -1,16 +1,16 @@
-import { Static, t } from "elysia";
+import { type Static, t } from "elysia";
 
 export const CouponDto = t.Object({
-  id: t.String({ format: "uuid" }),
-  name: t.String(),
-  value: t.Number(),
-  remainingUses: t.Number(),
+	id: t.String({ format: "uuid" }),
+	name: t.String(),
+	value: t.Number(),
+	remainingUses: t.Number(),
 });
 
 export const CouponInputDto = t.Object({
-  name: t.String(),
-  value: t.Number(),
-  remainingUses: t.Number(),
+	name: t.String(),
+	value: t.Number(),
+	remainingUses: t.Number(),
 });
 
 export type Coupon = Static<typeof CouponDto>;

@@ -1,23 +1,28 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { BuyNowUseCase } from "./buy-now.use-case";
-import type { ICartRepository } from "../domain/cart.iface";
-import type { IOrderRepository } from "../../orders/domain/orders.iface";
-import type { IProductRepository } from "../../products/domain/products.iface";
-import type { ICustomerRepository } from "../../customers/domain/customers.iface";
-import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
-import type { Cart, CartItemEntity } from "../domain/cart.entity";
-import type { Order } from "../../orders/domain/order.entity";
-import type { Product } from "../../products/domain/product.entity";
-import type { Customer } from "../../customers/domain/customer.entity";
+import type { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
+import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import filehub from "@/shared/filehub";
+import redis from "@/shared/redis";
+import { inventoryIO } from "@/socket.io";
 import {
   BadRequestError,
   NotFoundError,
 } from "../../../shared/presentation/errors";
-import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
-import filehub from "@/shared/filehub";
-import redis from "@/shared/redis";
-import { inventoryIO } from "@/socket.io";
+import type { Customer } from "../../customers/domain/customer.entity";
+import type { ICustomerRepository } from "../../customers/domain/customers.iface";
+import type {
+  Order,
+  OrderCancellation,
+} from "../../orders/domain/order.entity";
+import type { IOrderRepository } from "../../orders/domain/orders.iface";
+import type { Product } from "../../products/domain/product.entity";
+import type { IProductRepository } from "../../products/domain/products.iface";
+import type { Cart, CartItemEntity } from "../domain/cart.entity";
+import type { ICartRepository } from "../domain/cart.iface";
+import { BuyNowUseCase } from "./buy-now.use-case";
+import type { StoreSettings } from "@/modules/settings/domain/settings.entity";
+import type { Coupon } from "@/modules/coupons/domain/coupon.entity";
 
 describe("BuyNowUseCase", () => {
   let useCase: BuyNowUseCase;
@@ -64,7 +69,7 @@ describe("BuyNowUseCase", () => {
         Promise.resolve({ orders: [], counts: [] })
       ),
       count: mock(() => Promise.resolve(0)),
-      saveCancellation: mock(() => Promise.resolve({} as any)),
+      saveCancellation: mock(() => Promise.resolve({} as OrderCancellation)),
     };
     mockProductRepo = {
       findAll: mock(() => Promise.resolve({ data: [], total: 0 })),
@@ -111,7 +116,7 @@ describe("BuyNowUseCase", () => {
           totalOrders: null,
           createdAt: new Date(),
           updatedAt: new Date(),
-        } as any)
+        } as Customer)
       ),
       create: mock(() => Promise.resolve({} as Customer)),
       update: mock(() => Promise.resolve({} as Customer)),
@@ -128,17 +133,17 @@ describe("BuyNowUseCase", () => {
             value: 10,
             redemptionValue: 0.1,
           },
-        } as any)
+        } as StoreSettings)
       ),
-      update: mock(() => Promise.resolve({} as any)),
-      create: mock(() => Promise.resolve({} as any)),
+      update: mock(() => Promise.resolve({} as StoreSettings)),
+      create: mock(() => Promise.resolve({} as StoreSettings)),
     };
     mockCouponRepo = {
       findAll: mock(() => Promise.resolve([])),
       findById: mock(() => Promise.resolve(null)),
       findByName: mock(() => Promise.resolve(null)),
-      create: mock(() => Promise.resolve({} as any)),
-      update: mock(() => Promise.resolve({} as any)),
+      create: mock(() => Promise.resolve({} as Coupon)),
+      update: mock(() => Promise.resolve({} as Coupon)),
       delete: mock(() => Promise.resolve()),
     };
     mockUpsertCustomerUC = {
@@ -148,9 +153,9 @@ describe("BuyNowUseCase", () => {
           name: "John Doe",
           address: "123 Main St",
           points: 100,
-        } as any)
+        } as Customer)
       ),
-    } as any;
+    } as UpsertCustomerUseCase;
     originalGetSignedPutUrl = filehub.getSignedPutUrl;
     originalSet = redis.set;
     originalNotifyInventoryWithPendingOrder =

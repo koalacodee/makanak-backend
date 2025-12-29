@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { JoinShiftUseCase } from "./join-shift.use-case";
-import type { IOrderRepository } from "../../orders/domain/orders.iface";
-import type { Order } from "../../orders/domain/order.entity";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import redis from "@/shared/redis";
+import type {
+  Order,
+  OrderCancellation,
+} from "../../orders/domain/order.entity";
+import type { IOrderRepository } from "../../orders/domain/orders.iface";
+import { JoinShiftUseCase } from "./join-shift.use-case";
 
 describe("JoinShiftUseCase", () => {
   let useCase: JoinShiftUseCase;
@@ -20,7 +23,7 @@ describe("JoinShiftUseCase", () => {
         Promise.resolve({ orders: [], counts: [] })
       ),
       count: mock(() => Promise.resolve(0)),
-      saveCancellation: mock(() => Promise.resolve({} as any)),
+      saveCancellation: mock(() => Promise.resolve({} as OrderCancellation)),
     };
     originalSend = redis.send;
     redis.send = mock(() => Promise.resolve(1)) as typeof redis.send;
@@ -69,7 +72,7 @@ describe("JoinShiftUseCase", () => {
 
   it("should join shift and assign idle order when no ready orders", async () => {
     // Mock assignFirstIdleReadyOrderToFirstIdleDriver to return a result
-    redis.send = mock((command: string, args: any[]) => {
+    redis.send = mock((command: string, args: string[]) => {
       if (command === "EVAL" && args[0]?.includes("LPOP")) {
         // This is assignFirstIdleReadyOrderToFirstIdleDriver
         return Promise.resolve(["driver-1", "order-2"]);
@@ -105,7 +108,7 @@ describe("JoinShiftUseCase", () => {
   });
 
   it("should join shift with no orders when no idle orders available", async () => {
-    redis.send = mock((command: string, args: any[]) => {
+    redis.send = mock((command: string, args: string[]) => {
       if (command === "EVAL" && args[0]?.includes("LPOP")) {
         // assignFirstIdleReadyOrderToFirstIdleDriver returns null
         return Promise.resolve(null);

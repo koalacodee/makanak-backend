@@ -1,16 +1,18 @@
-import type { IOrderRepository } from "../domain/orders.iface";
-import type { IProductRepository } from "../../products/domain/products.iface";
-import type { ICustomerRepository } from "../../customers/domain/customers.iface";
-import type { Order, PaymentMethod } from "../domain/order.entity";
-import { BadRequestError } from "../../../shared/presentation/errors";
-import { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
-import filehub, { SignedPutUrl } from "@/shared/filehub";
-import redis from "@/shared/redis";
 import crypto from "crypto";
-import { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
-import { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
+import type { ICouponRepository } from "@/modules/coupons/domain/coupon.iface";
+import type { UpsertCustomerUseCase } from "@/modules/customers/application/upsert-customer.use-case";
+import type { ISettingsRepository } from "@/modules/settings/domain/settings.iface";
+import filehub, { type SignedPutUrl } from "@/shared/filehub";
 import { generateCodeAndHash } from "@/shared/helpers/hash";
+import redis from "@/shared/redis";
 import { inventoryIO } from "@/socket.io";
+import { BadRequestError } from "../../../shared/presentation/errors";
+import type { ICustomerRepository } from "../../customers/domain/customers.iface";
+import type { IProductRepository } from "../../products/domain/products.iface";
+import type { Order, PaymentMethod } from "../domain/order.entity";
+import type { IOrderRepository } from "../domain/orders.iface";
+import type { Coupon } from "@/modules/coupons/domain/coupon.entity";
+import type { Customer } from "@/modules/customers/domain/customer.entity";
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -178,7 +180,7 @@ export class CreateOrderUseCase {
     );
 
     let receiptUploadUrl: SignedPutUrl | null = null;
-    if (data.paymentMethod == "online") {
+    if (data.paymentMethod === "online") {
       if (!data.attachWithFileExtension) {
         throw new BadRequestError([
           {
@@ -229,15 +231,16 @@ export class CreateOrderUseCase {
     couponRepo: ICouponRepository,
     customerRepo: ICustomerRepository
   ): Promise<void> {
-    const promises: Promise<any>[] = [
-      // Reduce stock
-      productRepo.updateStockMany(
-        order.orderItems.map((item) => ({
-          id: item.productId,
-          delta: -item.quantity,
-        }))
-      ),
-    ];
+    const promises: Array<Promise<void> | Promise<Coupon> | Promise<Customer>> =
+      [
+        // Reduce stock
+        productRepo.updateStockMany(
+          order.orderItems.map((item) => ({
+            id: item.productId,
+            delta: -item.quantity,
+          }))
+        ),
+      ];
 
     // Reduce coupon usage by 1 (if coupon exists)
     if (order.couponId) {

@@ -1,9 +1,9 @@
+import { UnauthorizedError } from "../../../shared/presentation/errors";
 import type {
-  IUserRepository,
   IRefreshTokenRepository,
+  IUserRepository,
 } from "../domain/auth.iface";
 import type { AuthTokens } from "../domain/user.entity";
-import { UnauthorizedError } from "../../../shared/presentation/errors";
 
 export class RefreshTokenUseCase {
   async execute(
@@ -15,7 +15,7 @@ export class RefreshTokenUseCase {
     },
     refreshJwt: {
       sign: (payload: { sub: string }) => Promise<string>;
-      verify: (token: string) => Promise<any>;
+      verify: (token: string) => Promise<{ sub: string } | null>;
     }
   ): Promise<AuthTokens> {
     // Verify refresh token
