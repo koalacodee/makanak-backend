@@ -3,8 +3,8 @@ import Elysia, { t } from 'elysia'
 import db from '@/drizzle'
 import { attachments } from '@/drizzle/schema'
 import redis from '@/shared/redis'
-import { WebhookDataBasicDTO, WebhookDataFullDTO } from './webhook.dto'
 import filehub from '.'
+import { WebhookDataBasicDTO, WebhookDataFullDTO } from './webhook.dto'
 export const fileHubWebHookController = new Elysia({
   prefix: '/filehub/webhook',
 }).post(

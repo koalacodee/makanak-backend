@@ -7,6 +7,7 @@ import { CustomerRepository } from '../../customers/infrastructure/customer.repo
 import { OrderRepository } from '../../orders/infrastructure/order.repository'
 import { ProductRepository } from '../../products/infrastructure/product.repository'
 import { CancelOrderUseCase } from '../application/cancel-order.use-case'
+import { CheckDriverStatusUseCase } from '../application/check-driver-status.use-case'
 import { JoinShiftUseCase } from '../application/join-shift.use-case'
 import { LeaveShiftUseCase } from '../application/leave-shift.use-case'
 import { MarkAsReadyUseCase } from '../application/mark-as-ready.use-case'
@@ -35,3 +36,4 @@ export const driversModule = new Elysia({ name: 'driversModule' })
   .decorate('cancelOrderUC', new CancelOrderUseCase())
   .decorate('driverSocketService', driverSocketService)
   .decorate('changeOrderStatusUC', new ChangeOrderStatusUseCase())
+  .decorate('checkDriverStatusUC', new CheckDriverStatusUseCase())

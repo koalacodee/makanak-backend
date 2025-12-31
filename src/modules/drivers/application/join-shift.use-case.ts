@@ -25,6 +25,8 @@ export class JoinShiftUseCase {
       }
     }
 
+    await redis.sadd('shift_drivers', driverId)
+
     return {
       success: true,
       readyOrders: readyOrders.orders.map((order) => ({

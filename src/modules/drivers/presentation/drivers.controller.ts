@@ -1,7 +1,9 @@
 import { Elysia, t } from 'elysia'
 import { authGuard } from '@/modules/auth'
-import { OrderDto } from '@/modules/orders/presentation/orders.dto'
-import { driverSocketService } from '../infrastructure/driver-socket.service'
+import {
+  OrderDto,
+  OrderStatusEnum,
+} from '@/modules/orders/presentation/orders.dto'
 import { driversModule } from '../infrastructure/drivers.module'
 import {
   JoinShiftResponseDto,
@@ -11,69 +13,39 @@ import {
 
 export const driversController = new Elysia({ prefix: '/driver' })
   .use(driversModule)
-  .macro({
-    auth: {
-      async resolve({ query, accessJwt }) {
-        const token = (query as { token?: string }).token
-
-        if (token) {
-          try {
-            const payload = await accessJwt.verify(token)
-
-            if (
-              payload &&
-              typeof payload === 'object' &&
-              'sub' in payload &&
-              'role' in payload
-            ) {
-              const role = payload.role as string
-              if (role === 'driver') {
-                return {
-                  driverId: payload.sub as string,
-                  session: payload,
-                }
-              }
-            }
-          } catch (_error) {
-            // Token verification failed
-            return { driverId: null, session: null }
-          }
-        }
-
-        return { driverId: null, session: null }
-      },
-    },
-  })
-  .ws('/ws', {
-    query: t.Object({
-      token: t.String(),
-    }),
-    auth: true,
-    async open(ws) {
-      const { driverId, session } = ws.data as {
-        driverId: string | null
-        session: unknown
-      }
-
-      if (!driverId || !session) {
-        return ws.close(1008, 'Unauthorized')
-      }
-    },
-    async close(ws) {
-      const { driverId } = ws.data as {
-        driverId: string | null
-        session: unknown
-      }
-      if (driverId) {
-        driverSocketService.removeDriverSocket(driverId)
-      }
-    },
-    message(ws, message) {
-      // Echo back or handle incoming messages
-      ws.send(JSON.stringify({ type: 'ack', received: message }))
-    },
-  })
   .use(authGuard(['driver', 'inventory']))
+  .get(
+    '/check-driver-status',
+    async ({ user, checkDriverStatusUC, orderRepo }) => {
+      const result = await checkDriverStatusUC.execute(user.id, orderRepo)
+      return {
+        isShifted: result.isShifted,
+        isBusy: result.isBusy,
+        readyOrders: result.readyOrders?.map((order) => ({
+          ...order,
+          pointsDiscount: order.pointsDiscount
+            ? parseFloat(order.pointsDiscount)
+            : undefined,
+        })),
+        counts: result.counts,
+      }
+    },
+    {
+      response: t.Object({
+        isShifted: t.Boolean(),
+        isBusy: t.Boolean(),
+        readyOrders: t.Optional(t.Array(OrderDto)),
+        counts: t.Optional(
+          t.Array(
+            t.Object({
+              status: OrderStatusEnum,
+              count: t.Number(),
+            }),
+          ),
+        ),
+      }),
+    },
+  )
   .post(
     '/join-shift',
     async ({ user, joinShiftUC, orderRepo }) => {

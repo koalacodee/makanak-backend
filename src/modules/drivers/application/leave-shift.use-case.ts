@@ -9,6 +9,7 @@ export class LeaveShiftUseCase {
       ])
     }
     await redis.lrem('available_drivers', 1, driverId)
+    await redis.srem('shift_drivers', driverId)
     return { success: true }
   }
 }
