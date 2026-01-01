@@ -13,7 +13,6 @@ import type { ICustomerRepository } from '../../customers/domain/customers.iface
 import type { IProductRepository } from '../../products/domain/products.iface'
 import type { Order, PaymentMethod } from '../domain/order.entity'
 import type { IOrderRepository } from '../domain/orders.iface'
-import type { IAttachmentRepository } from '@/shared/attachments'
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -33,7 +32,6 @@ export class CreateOrderUseCase {
     settingsRepo: ISettingsRepository,
     customerRepo: ICustomerRepository,
     couponRepo: ICouponRepository,
-    attachmentRepo: IAttachmentRepository,
   ): Promise<{
     order: Order
     receiptUploadUrl?: string
@@ -182,6 +180,7 @@ export class CreateOrderUseCase {
     )
 
     let receiptUploadUrl: SignedPutUrl | null = null
+    let receiptImage: string | null = null
     if (data.paymentMethod === 'online') {
       if (!data.attachWithFileExtension) {
         throw new BadRequestError([
@@ -195,6 +194,12 @@ export class CreateOrderUseCase {
         3600 * 24 * 7,
         data.attachWithFileExtension,
       )
+      const signedUrlResponse = await filehub.getSignedUrl(
+        receiptUploadUrl.filename,
+      )
+      if (signedUrlResponse) {
+        receiptImage = signedUrlResponse.signedUrl
+      }
       await redis.hset(`filehub:${receiptUploadUrl.filename}`, {
         id: order.id,
         shouldConvertToAvif: '1',
@@ -204,23 +209,13 @@ export class CreateOrderUseCase {
     // No side effects on order creation - all effects happen when status changes
     // Stock, points, customer stats, and coupon usage will be handled when order becomes "ready"
     const pendingOrder = await orderRepo.findById(order.id)
-    let signedUrl: string | null = null
-    const receiptAttachment = await attachmentRepo.findByTargetId(order.id)
-    if (receiptAttachment[0]?.filename) {
-      const signedUrlResponse = await filehub.getSignedUrl(
-        receiptAttachment[0].filename,
-      )
-      if (signedUrlResponse) {
-        signedUrl = signedUrlResponse.signedUrl
-      }
-    }
     if (pendingOrder) {
       inventoryIO.notifyInventoryWithPendingOrder({
         ...pendingOrder,
         pointsDiscount: pendingOrder.pointsDiscount
           ? parseFloat(pendingOrder.pointsDiscount)
           : 0,
-        receiptImage: signedUrl ?? undefined,
+        receiptImage: receiptImage ?? undefined,
       })
     }
     return {
