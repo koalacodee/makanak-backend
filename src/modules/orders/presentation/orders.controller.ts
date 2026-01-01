@@ -70,6 +70,7 @@ export const ordersController = new Elysia({ prefix: '/orders' })
       settingsRepo,
       upsertCustomerUC,
       couponRepo,
+      attachmentRepo,
     }) => {
       const order = await createOrderUC.execute(
         {
@@ -89,6 +90,7 @@ export const ordersController = new Elysia({ prefix: '/orders' })
         settingsRepo,
         customerRepo,
         couponRepo,
+        attachmentRepo,
       )
 
       return {

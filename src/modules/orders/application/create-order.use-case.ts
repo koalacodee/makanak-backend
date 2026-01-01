@@ -13,6 +13,7 @@ import type { ICustomerRepository } from '../../customers/domain/customers.iface
 import type { IProductRepository } from '../../products/domain/products.iface'
 import type { Order, PaymentMethod } from '../domain/order.entity'
 import type { IOrderRepository } from '../domain/orders.iface'
+import type { IAttachmentRepository } from '@/shared/attachments'
 export class CreateOrderUseCase {
   async execute(
     data: {
@@ -32,6 +33,7 @@ export class CreateOrderUseCase {
     settingsRepo: ISettingsRepository,
     customerRepo: ICustomerRepository,
     couponRepo: ICouponRepository,
+    attachmentRepo: IAttachmentRepository,
   ): Promise<{
     order: Order
     receiptUploadUrl?: string
@@ -202,12 +204,23 @@ export class CreateOrderUseCase {
     // No side effects on order creation - all effects happen when status changes
     // Stock, points, customer stats, and coupon usage will be handled when order becomes "ready"
     const pendingOrder = await orderRepo.findById(order.id)
+    let signedUrl: string | null = null
+    const receiptAttachment = await attachmentRepo.findByTargetId(order.id)
+    if (receiptAttachment[0]?.filename) {
+      const signedUrlResponse = await filehub.getSignedUrl(
+        receiptAttachment[0].filename,
+      )
+      if (signedUrlResponse) {
+        signedUrl = signedUrlResponse.signedUrl
+      }
+    }
     if (pendingOrder) {
       inventoryIO.notifyInventoryWithPendingOrder({
         ...pendingOrder,
         pointsDiscount: pendingOrder.pointsDiscount
           ? parseFloat(pendingOrder.pointsDiscount)
           : 0,
+        receiptImage: signedUrl ?? undefined,
       })
     }
     return {
